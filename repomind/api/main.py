@@ -1,4 +1,5 @@
 import os
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from repomind.api.schemas import (
@@ -16,7 +17,6 @@ from repomind.retrieval.context_packer import ContextPacker
 from repomind.retrieval.pipeline import RetrievalPipeline
 from repomind.generation.llm_service import LLMService
 from repomind.generation.answer_generator import AnswerGenerator
-from repomind.evaluation.metrics import Metrics
 from repomind import __version__
 
 
@@ -131,17 +131,16 @@ async def query_repository(request: QueryRequest):
         raise HTTPException(status_code=400, detail="No index available. Please index a repository first.")
 
     try:
-        @Metrics.latency
-        def do_query():
-            chunks = retrieval_pipeline.retrieve(request.question)
-            return answer_generator.generate(request.question, chunks)
-
-        result = do_query()
+        start_time = time.time()
+        chunks = retrieval_pipeline.retrieve(request.question)
+        result = answer_generator.generate(request.question, chunks)
+        end_time = time.time()
+        latency_ms = (end_time - start_time) * 1000
 
         return QueryResponse(
             answer=result["answer"],
             sources=result["sources"],
-            latency_ms=result.get("latency_ms"),
+            latency_ms=latency_ms,
             prompt_tokens=result.get("prompt_tokens"),
             completion_tokens=result.get("completion_tokens"),
             total_tokens=result.get("total_tokens"),

@@ -3,6 +3,7 @@
 
 import os
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -86,8 +87,11 @@ def main():
         print(f"--- Query {i}: {query}")
         print()
 
+        start_time = time.time()
         chunks = retrieval_pipeline.retrieve(query)
         result = answer_generator.generate(query, chunks)
+        end_time = time.time()
+        latency_ms = (end_time - start_time) * 1000
 
         print("Answer:")
         print(result["answer"])
@@ -99,7 +103,7 @@ def main():
                 print(f"  - {source}")
             print()
 
-        print(f"Latency: {result.get('latency_ms', 0):.1f}ms")
+        print(f"Latency: {latency_ms:.1f}ms")
         print(f"Tokens: {result.get('total_tokens', 0)} (prompt: {result.get('prompt_tokens', 0)}, completion: {result.get('completion_tokens', 0)})")
         print()
         print("-" * 60)
