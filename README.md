@@ -185,6 +185,65 @@ POST /query
 - **API 框架**: FastAPI
 - **数据模型**: Pydantic
 
+## 基线对比测试结果
+
+以下是使用 `测试仓库/` 作为测试数据的四组系统对比结果：
+
+### 系统说明
+
+| 系统 | 特点 |
+|------|------|
+| LLM-only | 无检索 |
+| Naive RAG | 文件级 chunk |
+| Structured RAG | 函数级 chunk（但无 MQE/rerank） |
+| Full System | 完整优化 |
+
+### 对比结果汇总
+
+#### 查询 1: "这个项目是做什么的？"
+
+| 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
+|------|--------------|---------------|--------------------|--------------|
+| LLM-only | 25094.7 | 2213 | 1244 | 3457 |
+| Naive RAG | 13053.8 | 2394 | 667 | 3061 |
+| Structured RAG | 28924.1 | 2128 | 1725 | 3853 |
+| Full System | 69766.7 | 2126 | 1498 | 3624 |
+
+#### 查询 2: "有哪些可用的工具函数？"
+
+| 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
+|------|--------------|---------------|--------------------|--------------|
+| LLM-only | 18366.5 | 2213 | 1066 | 3279 |
+| Naive RAG | 8833.0 | 2396 | 412 | 2808 |
+| Structured RAG | 7036.3 | 2323 | 436 | 2759 |
+| Full System | 39963.8 | 2321 | 1683 | 4004 |
+
+#### 查询 3: "OpenAICompatibleClient 类如何使用？"
+
+| 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
+|------|--------------|---------------|--------------------|--------------|
+| LLM-only | 8477.8 | 2216 | 526 | 2742 |
+| Naive RAG | 9501.8 | 2399 | 622 | 3021 |
+| Structured RAG | 22631.0 | 1719 | 1241 | 2960 |
+| Full System | 27093.5 | 1719 | 508 | 2227 |
+
+#### 查询 4: "找到所有与天气相关的代码"
+
+| 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
+|------|--------------|---------------|--------------------|--------------|
+| LLM-only | 18686.4 | 2214 | 1074 | 3288 |
+| Naive RAG | 10582.2 | 2397 | 583 | 2980 |
+| Structured RAG | 12156.9 | 2324 | 646 | 2970 |
+| Full System | 35429.8 | 2322 | 902 | 3224 |
+
+### 观察总结
+
+- **Latency**: Full System 由于 MQE（多查询扩展）延迟较高，但答案质量通常更好
+- **Token Usage**: 各系统差异不大，主要取决于生成的答案长度
+- **答案质量**: Full System 和 Structured RAG 通常能提供更精确的答案，带正确的源文件引用
+
+**完整详细报告**请查看 `baseline_results/comparison_report.md`（本地留档，不提交 git）
+
 ## 开发进度
 
 - [x] Phase 1: 核心基础设施
@@ -194,6 +253,7 @@ POST /query
 - [x] Phase 5: 生成模块
 - [x] Phase 6: 评估与 API
 - [x] Phase 7: 文档与提交
+- [x] Phase 8: 基线对比测试
 
 ## 许可证
 

@@ -34,6 +34,7 @@ ENV/
 
 # Environment variables
 .env
+api_key.md
 
 # Data
 data/
@@ -46,3 +47,23 @@ Thumbs.db
 
 # Claude
 .claude/
+CLAUDE.md
+
+# Test content (demo phase)
+测试仓库/
+要求.md
+
+# Debug info
+*.log
+*.debug
+debug/
+
+# Local notes (not for git)
+optimization_notes.md
+*_notes.md
+
+# Baseline results (not for git)
+baseline_results/
+
+
+
