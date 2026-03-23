@@ -423,7 +423,8 @@ def main():
 
     print("[4/6] Saving prompts...")
     prompts_dir = results_dir / "prompts"
-    prompts_dir.mkdir(exist_ok=True)
+    results_dir.mkdir(exist_ok=True, parents=True)
+    prompts_dir.mkdir(exist_ok=True, parents=True)
 
     for query_idx, query_data in enumerate(test_queries_data, 1):
         query = query_data["question"]
