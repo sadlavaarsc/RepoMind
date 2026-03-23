@@ -1,0 +1,157 @@
+{
+  "project": "旅行agent",
+  "description": "基于LLM的ReAct模式旅行助手代理",
+  "questions": [
+    {
+      "id": 1,
+      "difficulty": "simple",
+      "question": "这个项目是做什么的？",
+      "expected_sources": [
+        "agent.py",
+        "prompt.py",
+        "ai_client.py",
+        "get_weather.py"
+      ],
+      "expected_entities": [
+        "OpenAICompatibleClient",
+        "get_weather",
+        "get_attraction"
+      ],
+      "reference_answer": "这个项目是一个基于大语言模型（LLM）的智能旅行助手 Agent。它实现了 ReAct（Reasoning + Acting）模式，能够理解用户请求，自主规划步骤并调用工具来完成任务。"
+    },
+    {
+      "id": 2,
+      "difficulty": "simple",
+      "question": "有哪些可用的工具函数？",
+      "expected_sources": [
+        "agent.py",
+        "prompt.py",
+        "get_weather.py",
+        "get_attraction.py"
+      ],
+      "expected_entities": [
+        "get_weather",
+        "get_attraction",
+        "available_tools"
+      ],
+      "reference_answer": "系统中主要定义了两个可用的工具函数：1. get_weather - 查询指定城市的天气信息；2. get_attraction - 根据城市和天气情况推荐旅游景点。"
+    },
+    {
+      "id": 3,
+      "difficulty": "simple",
+      "question": "get_weather 函数支持哪些城市？",
+      "expected_sources": [
+        "get_weather.py"
+      ],
+      "expected_entities": [
+        "get_weather",
+        "weather_data"
+      ],
+      "reference_answer": "get_weather 函数支持以下城市：上海、北京、广州、深圳、杭州（中英文都支持）。"
+    },
+    {
+      "id": 4,
+      "difficulty": "simple",
+      "question": "找到 prompt.py 文件",
+      "expected_sources": [
+        "prompt.py"
+      ],
+      "expected_entities": [
+        "AGENT_SYSTEM_PROMPT"
+      ],
+      "reference_answer": "prompt.py 文件位于项目根目录下，该文件定义了 AGENT_SYSTEM_PROMPT 系统提示词。"
+    },
+    {
+      "id": 5,
+      "difficulty": "medium",
+      "question": "agent.py 中的主循环是如何工作的？",
+      "expected_sources": [
+        "agent.py"
+      ],
+      "expected_entities": [
+        "available_tools",
+        "OpenAICompatibleClient"
+      ],
+      "reference_answer": "agent.py 中的主循环采用 ReAct 模式：1. 构建 Prompt 并调用 LLM；2. 解析 Thought 和 Action；3. 执行工具调用或结束任务；4. 记录观察结果并继续循环。"
+    },
+    {
+      "id": 6,
+      "difficulty": "medium",
+      "question": "如何配置 LLM 客户端？",
+      "expected_sources": [
+        "agent.py",
+        "ai_client.py"
+      ],
+      "expected_entities": [
+        "OpenAICompatibleClient",
+        "API_KEY",
+        "BASE_URL",
+        "MODEL_ID"
+      ],
+      "reference_answer": "配置 LLM 客户端需要：1. 从环境变量获取 QWEN_API_KEY；2. 设置 BASE_URL 和 MODEL_ID；3. 初始化 OpenAICompatibleClient 实例。"
+    },
+    {
+      "id": 7,
+      "difficulty": "medium",
+      "question": "模型输出的解析逻辑在哪里？",
+      "expected_sources": [
+        "agent.py"
+      ],
+      "expected_entities": [
+        "Action",
+        "Finish",
+        "available_tools"
+      ],
+      "reference_answer": "模型输出的解析逻辑在 agent.py 中，使用正则表达式提取 Thought 和 Action，支持工具调用和 Finish 两种格式。"
+    },
+    {
+      "id": 8,
+      "difficulty": "complex",
+      "question": "详细解释这个 ReAct 代理的完整工作流程",
+      "expected_sources": [
+        "agent.py",
+        "prompt.py",
+        "ai_client.py",
+        "get_weather.py"
+      ],
+      "expected_entities": [
+        "OpenAICompatibleClient",
+        "AGENT_SYSTEM_PROMPT",
+        "get_weather",
+        "available_tools"
+      ],
+      "reference_answer": "ReAct 代理工作流程：1. 初始化 LLM 客户端和对话历史；2. 循环：构建 Prompt -> 调用 LLM -> 解析 Action -> 执行工具 -> 记录 Observation；3. 直到 Finish 或达到最大循环次数。"
+    },
+    {
+      "id": 9,
+      "difficulty": "complex",
+      "question": "如果我想添加一个新工具函数，需要修改哪些文件？",
+      "expected_sources": [
+        "agent.py",
+        "prompt.py"
+      ],
+      "expected_entities": [
+        "available_tools",
+        "AGENT_SYSTEM_PROMPT"
+      ],
+      "reference_answer": "添加新工具需要：1. 创建工具函数文件；2. 在 agent.py 中导入并注册到 available_tools；3. 在 prompt.py 的 AGENT_SYSTEM_PROMPT 中添加工具说明。"
+    },
+    {
+      "id": 10,
+      "difficulty": "complex",
+      "question": "分析这个代理的局限性和可能的改进方向",
+      "expected_sources": [
+        "agent.py",
+        "prompt.py",
+        "get_weather.py",
+        "ai_client.py"
+      ],
+      "expected_entities": [
+        "available_tools",
+        "get_weather",
+        "OpenAICompatibleClient"
+      ],
+      "reference_answer": "局限性：天气数据硬编码、工具数量有限、循环次数限制、错误处理简单。改进方向：增强工具生态、改进执行引擎、优化提示词工程、增强持久化。"
+    }
+  ]
+}

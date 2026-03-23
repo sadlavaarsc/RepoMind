@@ -1,0 +1,116 @@
+{
+  "project": "旅行agent",
+  "question_sources": {
+    "1": {
+      "files": [
+        "agent.py",
+        "prompt.py",
+        "ai_client.py",
+        "get_weather.py"
+      ],
+      "functions": [
+        "OpenAICompatibleClient",
+        "get_weather",
+        "get_attraction"
+      ]
+    },
+    "2": {
+      "files": [
+        "agent.py",
+        "prompt.py",
+        "get_weather.py",
+        "get_attraction.py"
+      ],
+      "functions": [
+        "get_weather",
+        "get_attraction",
+        "available_tools"
+      ]
+    },
+    "3": {
+      "files": [
+        "get_weather.py"
+      ],
+      "functions": [
+        "get_weather",
+        "weather_data"
+      ]
+    },
+    "4": {
+      "files": [
+        "prompt.py"
+      ],
+      "functions": [
+        "AGENT_SYSTEM_PROMPT"
+      ]
+    },
+    "5": {
+      "files": [
+        "agent.py"
+      ],
+      "functions": [
+        "available_tools",
+        "OpenAICompatibleClient"
+      ]
+    },
+    "6": {
+      "files": [
+        "agent.py",
+        "ai_client.py"
+      ],
+      "functions": [
+        "OpenAICompatibleClient",
+        "API_KEY",
+        "BASE_URL",
+        "MODEL_ID"
+      ]
+    },
+    "7": {
+      "files": [
+        "agent.py"
+      ],
+      "functions": [
+        "Action",
+        "Finish",
+        "available_tools"
+      ]
+    },
+    "8": {
+      "files": [
+        "agent.py",
+        "prompt.py",
+        "ai_client.py",
+        "get_weather.py"
+      ],
+      "functions": [
+        "OpenAICompatibleClient",
+        "AGENT_SYSTEM_PROMPT",
+        "get_weather",
+        "available_tools"
+      ]
+    },
+    "9": {
+      "files": [
+        "agent.py",
+        "prompt.py"
+      ],
+      "functions": [
+        "available_tools",
+        "AGENT_SYSTEM_PROMPT"
+      ]
+    },
+    "10": {
+      "files": [
+        "agent.py",
+        "prompt.py",
+        "get_weather.py",
+        "ai_client.py"
+      ],
+      "functions": [
+        "available_tools",
+        "get_weather",
+        "OpenAICompatibleClient"
+      ]
+    }
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "project": "CueZero",
+  "question_sources": {
+    "1": {
+      "files": [
+        "README.md",
+        "README_zh.md"
+      ],
+      "functions": [
+        "MCTS",
+        "DualNetwork",
+        "BilliardsEnv"
+      ]
+    },
+    "2": {
+      "files": [
+        "README.md",
+        "cuezero/env/physics_wrapper.py",
+        "cuezero/env/billiards_env.py"
+      ],
+      "functions": [
+        "BilliardsEnv",
+        "simulate_with_timeout",
+        "pooltool"
+      ]
+    },
+    "3": {
+      "files": [
+        "README.md",
+        "cuezero/models/dual_network.py"
+      ],
+      "functions": [
+        "DualNetwork",
+        "SharedFeatureExtractor",
+        "PolicyHead",
+        "ValueHead"
+      ]
+    },
+    "4": {
+      "files": [
+        "README.md",
+        "cuezero/mcts/search.py"
+      ],
+      "functions": [
+        "MCTS",
+        "MCTS.__init__"
+      ]
+    },
+    "5": {
+      "files": [
+        "README.md",
+        "cuezero/mcts/search.py",
+        "cuezero/env/state_encoder.py"
+      ],
+      "functions": [
+        "MCTS.action_min",
+        "MCTS.action_max",
+        "StateEncoder"
+      ]
+    },
+    "6": {
+      "files": [
+        "cuezero/models/dual_network.py",
+        "README.md"
+      ],
+      "functions": [
+        "DualNetwork",
+        "SharedFeatureExtractor",
+        "PolicyHead",
+        "ValueHead"
+      ]
+    },
+    "7": {
+      "files": [
+        "README.md",
+        "scripts/cli_game.py"
+      ],
+      "functions": [
+        "create_agent",
+        "BilliardsEnv",
+        "MCTSAgent"
+      ]
+    },
+    "8": {
+      "files": [
+        "README.md",
+        "cuezero/mcts/search.py",
+        "cuezero/mcts/node.py"
+      ],
+      "functions": [
+        "MCTS",
+        "MCTSNode",
+        "simulate_with_timeout"
+      ]
+    },
+    "9": {
+      "files": [
+        "README.md",
+        "scripts/train.py",
+        "scripts/selfplay.py",
+        "cuezero/training/trainer.py"
+      ],
+      "functions": [
+        "Trainer",
+        "ReplayBuffer",
+        "train.py",
+        "selfplay.py"
+      ]
+    },
+    "10": {
+      "files": [
+        "README.md",
+        "cuezero/mcts/search.py",
+        "cuezero/models/dual_network.py",
+        "scripts/cli_game.py"
+      ],
+      "functions": [
+        "MCTS",
+        "DualNetwork",
+        "BilliardsEnv"
+      ]
+    }
+  }
+}

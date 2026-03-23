@@ -1,0 +1,165 @@
+{
+  "project": "CueZero",
+  "description": "结合深度强化学习和MCTS的台球AI系统",
+  "questions": [
+    {
+      "id": 1,
+      "difficulty": "simple",
+      "question": "CueZero 是什么项目？",
+      "expected_sources": [
+        "README.md",
+        "README_zh.md"
+      ],
+      "expected_entities": [
+        "MCTS",
+        "DualNetwork",
+        "BilliardsEnv"
+      ],
+      "reference_answer": "CueZero 是一个高性能台球 AI 系统，结合了深度强化学习和专门设计的连续动作蒙特卡洛树搜索（MCTS）。关键亮点：81维状态表示，5维连续动作空间，约160K参数的紧凑模型，54倍搜索空间缩减，相对于规则基代理95%胜率。"
+    },
+    {
+      "id": 2,
+      "difficulty": "simple",
+      "question": "这个项目使用了什么物理引擎？",
+      "expected_sources": [
+        "README.md",
+        "cuezero/env/physics_wrapper.py",
+        "cuezero/env/billiards_env.py"
+      ],
+      "expected_entities": [
+        "BilliardsEnv",
+        "simulate_with_timeout",
+        "pooltool"
+      ],
+      "reference_answer": "CueZero 使用 pooltool 作为台球物理引擎，在 physics_wrapper.py 中提供了带超时保护的物理模拟函数 simulate_with_timeout，billiards_env.py 中的 BilliardsEnv 类封装了完整的台球环境。"
+    },
+    {
+      "id": 3,
+      "difficulty": "simple",
+      "question": "模型有多大？",
+      "expected_sources": [
+        "README.md",
+        "cuezero/models/dual_network.py"
+      ],
+      "expected_entities": [
+        "DualNetwork",
+        "SharedFeatureExtractor",
+        "PolicyHead",
+        "ValueHead"
+      ],
+      "reference_answer": "CueZero 的模型非常紧凑，只有约 160K 参数。模型架构包括：共享特征提取器（2层FC + GRU）、策略头（2层FC）、价值头（2层FC）。"
+    },
+    {
+      "id": 4,
+      "difficulty": "simple",
+      "question": "MCTS 有哪两种模式？",
+      "expected_sources": [
+        "README.md",
+        "cuezero/mcts/search.py"
+      ],
+      "expected_entities": [
+        "MCTS",
+        "MCTS.__init__"
+      ],
+      "reference_answer": "CueZero 的 MCTS 有两种模式：Fast 和 Full。MCTS-Full：150次模拟，深度4，超时15秒，决策时间约3分钟；MCTS-Fast：30次模拟，深度2，超时3秒，决策时间约1秒，180倍速度提升。"
+    },
+    {
+      "id": 5,
+      "difficulty": "medium",
+      "question": "状态和动作空间的维度是多少？",
+      "expected_sources": [
+        "README.md",
+        "cuezero/mcts/search.py",
+        "cuezero/env/state_encoder.py"
+      ],
+      "expected_entities": [
+        "MCTS.action_min",
+        "MCTS.action_max",
+        "StateEncoder"
+      ],
+      "reference_answer": "状态空间：81维（包含球的位置、速度、球袋状态等）；动作空间：5维连续动作（V0击球速度、phi水平角度、theta垂直角度、a击球点水平偏移、b击球点垂直偏移）。"
+    },
+    {
+      "id": 6,
+      "difficulty": "medium",
+      "question": "DualNetwork 的架构是怎样的？",
+      "expected_sources": [
+        "cuezero/models/dual_network.py",
+        "README.md"
+      ],
+      "expected_entities": [
+        "DualNetwork",
+        "SharedFeatureExtractor",
+        "PolicyHead",
+        "ValueHead"
+      ],
+      "reference_answer": "DualNetwork 架构包括：1. SharedFeatureExtractor（共享特征提取器）：输入3×81维，2层FC+GRU，输出128维；2. PolicyHead（策略头）：2层FC+Dropout，输出5维动作；3. ValueHead（价值头）：2层FC，输出1维胜率预测。"
+    },
+    {
+      "id": 7,
+      "difficulty": "medium",
+      "question": "如何运行 CLI 对战？",
+      "expected_sources": [
+        "README.md",
+        "scripts/cli_game.py"
+      ],
+      "expected_entities": [
+        "create_agent",
+        "BilliardsEnv",
+        "MCTSAgent"
+      ],
+      "reference_answer": "运行 CLI 对战：python scripts/cli_game.py --agent-a mcts_fast --agent-b basic --games 5。可用Agent类型：human、mcts_fast、mcts_full、policy、basic、basic_pro、random。"
+    },
+    {
+      "id": 8,
+      "difficulty": "complex",
+      "question": "详细解释 MCTS 搜索是如何为连续动作空间优化的？",
+      "expected_sources": [
+        "README.md",
+        "cuezero/mcts/search.py",
+        "cuezero/mcts/node.py"
+      ],
+      "expected_entities": [
+        "MCTS",
+        "MCTSNode",
+        "simulate_with_timeout"
+      ],
+      "reference_answer": "MCTS 连续动作空间优化：1. Ghost Ball启发式几何生成约30个高质量候选；2. 策略引导剪枝保留前2/3候选；3. 结果：54倍搜索空间缩减（4,500次评估 vs 243,000组合）。"
+    },
+    {
+      "id": 9,
+      "difficulty": "complex",
+      "question": "完整的训练 pipeline 包括哪些步骤？",
+      "expected_sources": [
+        "README.md",
+        "scripts/train.py",
+        "scripts/selfplay.py",
+        "cuezero/training/trainer.py"
+      ],
+      "expected_entities": [
+        "Trainer",
+        "ReplayBuffer",
+        "train.py",
+        "selfplay.py"
+      ],
+      "reference_answer": "训练 pipeline：1. 预训练（~200 epochs）在 BasicAgent 数据上；2. 自我对弈训练（~600 epochs）使用 MCTS 引导；3. 补充训练（~200 epochs）专门化精细调整；总计约1000 epochs。"
+    },
+    {
+      "id": 10,
+      "difficulty": "complex",
+      "question": "分析这个项目的工程亮点和技术创新",
+      "expected_sources": [
+        "README.md",
+        "cuezero/mcts/search.py",
+        "cuezero/models/dual_network.py",
+        "scripts/cli_game.py"
+      ],
+      "expected_entities": [
+        "MCTS",
+        "DualNetwork",
+        "BilliardsEnv"
+      ],
+      "reference_answer": "工程亮点：1. 紧凑模型架构（~160K参数）；2. 连续动作空间专用MCTS（54倍缩减）；3. 双MCTS模式（Fast/Full）；4. 高效训练pipeline；5. 混合评估策略；6. 完整工程化实现；7. 95%胜率；8. pooltool物理引擎集成。"
+    }
+  ]
+}
