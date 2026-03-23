@@ -22,6 +22,7 @@ from repomind.baselines.llm_only import LLMOnly
 from repomind.baselines.naive_rag import NaiveRAG
 from repomind.baselines.structured_rag import StructuredRAG
 from repomind.baselines.full_system import FullSystem
+from repomind.baselines.full_system_fast import FullSystemFast
 
 
 def main():
@@ -36,7 +37,7 @@ def main():
     print(f"Test repository: {test_repo_path}")
     print()
 
-    print("[1/5] Initializing services...")
+    print("[1/6] Initializing services...")
     embedding_service = EmbeddingService(
         api_key=settings.qwen_api_key,
         base_url=settings.base_url,
@@ -58,7 +59,7 @@ def main():
         "找到所有与天气相关的代码",
     ]
 
-    print("[2/5] Initializing systems...")
+    print("[2/6] Initializing systems...")
 
     print("  - LLM-only")
     llm_only = LLMOnly(llm_service=llm_service)
@@ -109,14 +110,19 @@ def main():
     )
     full_system.index_repository(str(test_repo_path))
 
+    print("  - Full System Fast")
+    full_system_fast = FullSystemFast()
+    full_system_fast.index_repository(str(test_repo_path))
+
     systems = {
         "LLM-only": llm_only,
         "Naive RAG": naive_rag,
         "Structured RAG": structured_rag,
         "Full System": full_system,
+        "Full System Fast": full_system_fast,
     }
 
-    print("[3/5] Running queries...")
+    print("[3/6] Running queries...")
     print()
 
     all_results = {}
@@ -141,7 +147,31 @@ def main():
         print("-" * 80)
         print()
 
-    print("[4/5] Generating report...")
+    print("[4/6] Saving prompts...")
+    prompts_dir = results_dir / "prompts"
+    prompts_dir.mkdir(exist_ok=True)
+
+    for query_idx, (query, system_results) in [(i+1, qr) for i, qr in enumerate(all_results.items())]:
+        safe_query_name = query.replace("?", "_").replace(" ", "_")[:30]
+        for system_name, result in system_results.items():
+            safe_system_name = system_name.replace(" ", "_")
+            prompt_file = prompts_dir / f"query{query_idx}_{safe_system_name}_{safe_query_name}.md"
+
+            if result.get("full_prompt"):
+                with open(prompt_file, "w", encoding="utf-8") as f:
+                    f.write(f"# Prompt - {system_name}\n\n")
+                    f.write(f"**查询**: {query}\n\n")
+                    f.write("---\n\n")
+                    f.write("## System Prompt\n\n")
+                    f.write(f"```\n{result['full_prompt']['system_prompt']}\n```\n\n")
+                    f.write("---\n\n")
+                    f.write("## User Prompt\n\n")
+                    f.write(f"```\n{result['full_prompt']['user_prompt']}\n```\n")
+
+    print(f"  Prompts saved to: {prompts_dir}/")
+    print()
+
+    print("[5/6] Generating report...")
     report_path = results_dir / "comparison_report.md"
 
     with open(report_path, "w", encoding="utf-8") as f:
@@ -155,7 +185,8 @@ def main():
         f.write("| LLM-only | 无检索 |\n")
         f.write("| Naive RAG | 文件级 chunk |\n")
         f.write("| Structured RAG | 函数级 chunk（但无 MQE/rerank） |\n")
-        f.write("| Full System | 完整优化 |\n\n")
+        f.write("| Full System | 完整优化（qwen3.5-plus） |\n")
+        f.write("| Full System Fast | 完整优化 + 双模型策略（qwen-flash + qwen3.5-plus） |\n\n")
 
         f.write("## 对比结果汇总\n\n")
 
@@ -181,10 +212,11 @@ def main():
 
         f.write("\n## 总结\n\n")
         f.write("此报告为基线对比测试结果，留档保存。\n")
+        f.write("\n**注**: 完整的 prompt 已单独保存在 `prompts/` 目录下。\n")
 
     print(f"  Report saved to: {report_path}")
     print()
-    print("[5/5] Complete!")
+    print("[6/6] Complete!")
 
 
 if __name__ == "__main__":

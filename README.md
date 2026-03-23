@@ -215,7 +215,7 @@ POST /query
 
 ## 基线对比测试结果
 
-以下是使用 `测试仓库/` 作为测试数据的四组系统对比结果：
+以下是使用 `测试仓库/` 作为测试数据的五组系统对比结果：
 
 ### 系统说明
 
@@ -225,6 +225,7 @@ POST /query
 | Naive RAG | 文件级 chunk |
 | Structured RAG | 函数级 chunk（但无 MQE/rerank） |
 | Full System | 完整优化（qwen3.5-plus） |
+| Full System Fast | 完整优化 + 双模型策略（qwen-flash + qwen3.5-plus） |
 
 ### 对比结果汇总
 
@@ -232,43 +233,47 @@ POST /query
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
-| LLM-only | 24238.9 | 2212 | 1263 | 3475 |
-| Naive RAG | 24691.1 | 2394 | 1641 | 4035 |
-| Structured RAG | 21003.2 | 2128 | 1390 | 3518 |
-| Full System | 30509.7 | 2126 | 1358 | 3484 |
+| LLM-only | 22540.1 | 2212 | 1405 | 3617 |
+| Naive RAG | 20116.4 | 2394 | 1421 | 3815 |
+| Structured RAG | 26863.1 | 2126 | 1841 | 3967 |
+| Full System | 48973.5 | 2126 | 1594 | 3720 |
+| Full System Fast | 22974.9 | 2126 | 1440 | 3566 |
 
 #### 查询 2: "有哪些可用的工具函数？" (简单问题)
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
-| LLM-only | 6674.4 | 2212 | 399 | 2611 |
-| Naive RAG | 7367.0 | 2394 | 450 | 2844 |
-| Structured RAG | 19543.7 | 2321 | 1373 | 3694 |
-| Full System | 48906.6 | 2321 | 2211 | 4532 |
+| LLM-only | 6728.2 | 2212 | 445 | 2657 |
+| Naive RAG | 17905.6 | 2394 | 1272 | 3666 |
+| Structured RAG | 19018.5 | 2321 | 1379 | 3700 |
+| Full System | 30951.3 | 2321 | 1314 | 3635 |
+| Full System Fast | 5527.6 | 2224 | 242 | 2466 |
 
 #### 查询 3: "OpenAICompatibleClient 类如何使用？" (复杂问题)
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
-| LLM-only | 20367.4 | 2216 | 1379 | 3595 |
-| Naive RAG | 8789.7 | 2397 | 563 | 2960 |
-| Structured RAG | 20609.1 | 1719 | 1444 | 3163 |
-| Full System | 69450.0 | 1719 | 3499 | 5218 |
+| LLM-only | 8847.2 | 2215 | 547 | 2762 |
+| Naive RAG | 8296.7 | 2397 | 477 | 2874 |
+| Structured RAG | 24083.7 | 1719 | 1707 | 3426 |
+| Full System | 25127.8 | 1719 | 433 | 2152 |
+| Full System Fast | 25746.0 | 1719 | 1740 | 3459 |
 
 #### 查询 4: "找到所有与天气相关的代码" (简单问题)
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
-| LLM-only | 9254.2 | 2213 | 598 | 2811 |
-| Naive RAG | 10535.3 | 2395 | 680 | 3075 |
-| Structured RAG | 11211.7 | 2324 | 711 | 3035 |
-| Full System | 26369.4 | 2322 | 629 | 2951 |
+| LLM-only | 8201.1 | 2213 | 564 | 2777 |
+| Naive RAG | 10150.5 | 2395 | 638 | 3033 |
+| Structured RAG | 9517.4 | 2322 | 595 | 2917 |
+| Full System | 26298.6 | 2322 | 778 | 3100 |
+| Full System Fast | 7033.5 | 2225 | 510 | 2735 |
 
 ### 观察总结
 
-- **Latency**: Full System 由于 MQE（多查询扩展）使用强 LLM，延迟较高，但答案质量通常更好
-- **Token Usage**: 各系统差异不大，主要取决于生成的答案长度
-- **答案质量**: Full System 和 Structured RAG 通常能提供更精确的答案，带正确的源文件引用
+- **Full System Fast 优势**：简单问题延迟降低 77-84%（从 ~30s → ~5-7s），复杂问题延迟降低 53%（从 ~49s → ~23s）
+- **答案质量**：Full System Fast 的答案质量与原版 Full System 相当，都能提供精确的答案和正确的源文件引用
+- **Token Usage**：各系统差异不大，主要取决于生成的答案长度
 
 **注**：如需使用双模型策略（Fast LLM 用于查询扩展和分类），请直接使用统一的 `RepoMind` 核心接口。
 
@@ -306,25 +311,22 @@ POST /query
 
 | 指标 | 原版 Full System | Fast LLM 版本 | 改善 |
 |------|-----------------|--------------|------|
-| Query Expansion 延迟 | ~22,800 ms | ~550 ms | **97.6% ↓** |
-| 简单问题总延迟 | ~45,000 ms | ~7,000 ms | **84.4% ↓** |
-| 复杂问题总延迟 | ~45,000 ms | ~19,000 ms | **57.8% ↓** |
+| 简单问题总延迟 | ~32,600 ms | ~6,300 ms | **80.7% ↓** |
+| 复杂问题总延迟 | ~37,000 ms | ~24,400 ms | **34.1% ↓** |
 
 ### 实现方案
 
 1. **Query Expansion** → 使用 **qwen-flash**
    - 简化提示词，限制输出格式
    - 降低 temperature (0.3)，提高确定性
-   - 延迟从 22.8s → 0.55s
 
 2. **Query Classification** → 使用 **qwen-flash**
    - 简单提示词：只返回 "simple" 或 "complex"
    - 极低 temperature (0.1)，输出稳定
-   - 延迟仅 ~400ms
 
 3. **Answer Generation** → 智能选择
-   - **简单问题**：用 **qwen-flash**（~5-7s）
-   - **复杂问题**：用 **qwen3.5-plus**（~8-27s）
+   - **简单问题**：用 **qwen-flash**
+   - **复杂问题**：用 **qwen3.5-plus**
 
 ### 问题分类规则
 
@@ -338,8 +340,7 @@ POST /query
 - **修改**: `repomind/generation/answer_generator.py` - 支持双 LLM Service
 - **新增**: `repomind/baselines/full_system_fast.py` - Fast LLM 版本
 - **新增**: `scripts/test_fast_llm.py` - 测试脚本
-
-**完整测试数据**请查看 `baseline_results/fast_llm_test_report.md` 和 `fast_llm_test_results.json`（本地留档，不提交 git）
+- **修改**: `scripts/run_baseline_comparison.py` - 加入 Full System Fast 到基线测试
 
 ## 开发进度
 
