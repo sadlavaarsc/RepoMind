@@ -36,10 +36,37 @@ cp .env.example .env
 # 编辑 .env 文件，设置 QWEN_API_KEY
 ```
 
+### 使用核心接口（推荐）
+
+直接使用统一的 `RepoMind` 类，提供所有可配置选项：
+
+```python
+from repomind import RepoMind
+
+# 初始化（使用默认配置）
+repomind = RepoMind()
+
+# 或自定义配置
+repomind = RepoMind(
+    enable_query_expansion=True,      # 启用查询扩展
+    enable_query_classification=True,  # 启用问题分类
+    query_expansion_variants=2,         # 查询扩展变体数量
+    use_fast_llm_for_expansion=True,    # 查询扩展用 fast LLM
+    use_hybrid_answer_generation=True,  # 混合答案生成（简单问题用 fast）
+)
+
+# 索引仓库
+repomind.index_repository("/path/to/repo")
+
+# 查询
+result = repomind.query("这个项目是做什么的？")
+print(result["answer"])
+```
+
 ### 运行 Demo 测试
 
 ```bash
-conda activate agentEnv && python scripts/test_demo.py
+conda activate agentEnv && python scripts/test_core.py
 ```
 
 ### 启动 API 服务
@@ -188,7 +215,7 @@ POST /query
 
 ## 基线对比测试结果
 
-以下是使用 `测试仓库/` 作为测试数据的五组系统对比结果：
+以下是使用 `测试仓库/` 作为测试数据的四组系统对比结果：
 
 ### 系统说明
 
@@ -198,7 +225,6 @@ POST /query
 | Naive RAG | 文件级 chunk |
 | Structured RAG | 函数级 chunk（但无 MQE/rerank） |
 | Full System | 完整优化（qwen3.5-plus） |
-| **Full System Fast** | **完整优化 + 双模型策略** |
 
 ### 对比结果汇总
 
@@ -206,49 +232,45 @@ POST /query
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
-| LLM-only | 25094.7 | 2213 | 1244 | 3457 |
-| Naive RAG | 13053.8 | 2394 | 667 | 3061 |
-| Structured RAG | 28924.1 | 2128 | 1725 | 3853 |
-| Full System | 69766.7 | 2126 | 1498 | 3624 |
-| **Full System Fast** | **28209.2** | **2128** | **1556** | **3684** |
+| LLM-only | 24238.9 | 2212 | 1263 | 3475 |
+| Naive RAG | 24691.1 | 2394 | 1641 | 4035 |
+| Structured RAG | 21003.2 | 2128 | 1390 | 3518 |
+| Full System | 30509.7 | 2126 | 1358 | 3484 |
 
 #### 查询 2: "有哪些可用的工具函数？" (简单问题)
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
-| LLM-only | 18366.5 | 2213 | 1066 | 3279 |
-| Naive RAG | 8833.0 | 2396 | 412 | 2808 |
-| Structured RAG | 7036.3 | 2323 | 436 | 2759 |
-| Full System | 39963.8 | 2321 | 1683 | 4004 |
-| **Full System Fast** | **7246.1** | **2224** | **305** | **2529** |
+| LLM-only | 6674.4 | 2212 | 399 | 2611 |
+| Naive RAG | 7367.0 | 2394 | 450 | 2844 |
+| Structured RAG | 19543.7 | 2321 | 1373 | 3694 |
+| Full System | 48906.6 | 2321 | 2211 | 4532 |
 
 #### 查询 3: "OpenAICompatibleClient 类如何使用？" (复杂问题)
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
-| LLM-only | 8477.8 | 2216 | 526 | 2742 |
-| Naive RAG | 9501.8 | 2399 | 622 | 3021 |
-| Structured RAG | 22631.0 | 1719 | 1241 | 2960 |
-| Full System | 27093.5 | 1719 | 508 | 2227 |
-| **Full System Fast** | **10254.5** | **1719** | **495** | **2214** |
+| LLM-only | 20367.4 | 2216 | 1379 | 3595 |
+| Naive RAG | 8789.7 | 2397 | 563 | 2960 |
+| Structured RAG | 20609.1 | 1719 | 1444 | 3163 |
+| Full System | 69450.0 | 1719 | 3499 | 5218 |
 
 #### 查询 4: "找到所有与天气相关的代码" (简单问题)
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
-| LLM-only | 18686.4 | 2214 | 1074 | 3288 |
-| Naive RAG | 10582.2 | 2397 | 583 | 2980 |
-| Structured RAG | 12156.9 | 2324 | 646 | 2970 |
-| Full System | 35429.8 | 2322 | 902 | 3224 |
-| **Full System Fast** | **8484.3** | **2225** | **492** | **2717** |
+| LLM-only | 9254.2 | 2213 | 598 | 2811 |
+| Naive RAG | 10535.3 | 2395 | 680 | 3075 |
+| Structured RAG | 11211.7 | 2324 | 711 | 3035 |
+| Full System | 26369.4 | 2322 | 629 | 2951 |
 
 ### 观察总结
 
-- **Latency**:
-  - Full System (原版) 由于 MQE 使用强 LLM，延迟最高
-  - **Full System Fast** 使用双模型策略，复杂问题延迟降低 ~50-60%，简单问题延迟降低 ~75-80%
+- **Latency**: Full System 由于 MQE（多查询扩展）使用强 LLM，延迟较高，但答案质量通常更好
 - **Token Usage**: 各系统差异不大，主要取决于生成的答案长度
-- **答案质量**: Full System 和 Full System Fast 答案质量相当，都能提供精确的答案和源文件引用
+- **答案质量**: Full System 和 Structured RAG 通常能提供更精确的答案，带正确的源文件引用
+
+**注**：如需使用双模型策略（Fast LLM 用于查询扩展和分类），请直接使用统一的 `RepoMind` 核心接口。
 
 **完整详细报告**请查看 `baseline_results/comparison_report.md` 和 `fast_llm_test_report.md`（本地留档，不提交 git）
 
