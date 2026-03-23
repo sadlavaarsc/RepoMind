@@ -150,7 +150,7 @@
 |------|-----------|-----------|-----------|------------|------------|-----------|
 | llm_only | 0.000 | 0.000 | 0.000 | 0.446 | 21760.5 | 3590 |
 | naive_rag | 0.500 | 1.000 | 0.260 | 0.627 | 15034.3 | 14100 |
-| structured_rag | 0.000 | 0.000 | 0.000 | 0.167 | 9038.7 | 2218 |
+| structured_rag | 0.325 | 0.700 | 0.320 | 0.574 | 20691.7 | 4585 |
 | full_system | 0.400 | 0.900 | 0.475 | 0.609 | 82998.6 | 3499 |
 | full_system_fast | 0.400 | 0.900 | 0.408 | 0.603 | 11706.0 | 2729 |
 
@@ -212,27 +212,27 @@
 
 | 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
 |--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
-| 1 | 0.000 | 0.000 | 0.000 | 0.533 | 0.333 | 28454.2 | 1465 | 1761 | 3226 | 2 | 2 | Fair - covers some key entities but missing important details |
-| 2 | 0.000 | 0.000 | 0.000 | 0.533 | 0.333 | 12063.5 | 12020 | 687 | 12707 | 3 | 2 | Fair - covers some key entities but missing important details |
-| 3 | 0.000 | 0.000 | 0.000 | 0.300 | 0.000 | 24472.2 | 1400 | 1612 | 3012 | 2 | 2 | Poor - missing most key entities or incomplete answer |
-| 4 | 0.000 | 0.000 | 0.000 | 0.300 | 0.000 | 25397.2 | 1594 | 1639 | 3233 | 2 | 2 | Poor - missing most key entities or incomplete answer |
-| 5 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.0 | 0 | 0 | 0 | 3 | 0 | No answer provided |
-| 6 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.0 | 0 | 0 | 0 | 2 | 0 | No answer provided |
-| 7 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.0 | 0 | 0 | 0 | 2 | 0 | No answer provided |
-| 8 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.0 | 0 | 0 | 0 | 3 | 0 | No answer provided |
-| 9 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.0 | 0 | 0 | 0 | 4 | 0 | No answer provided |
-| 10 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.0 | 0 | 0 | 0 | 4 | 0 | No answer provided |
+| 1 | 0.500 | 1.000 | 0.200 | 0.533 | 0.333 | 10506.5 | 3665 | 544 | 4209 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 0.667 | 1.000 | 1.000 | 0.533 | 0.333 | 43157.0 | 731 | 2521 | 3252 | 3 | 2 | Fair - covers some key entities but missing important details |
+| 3 | 0.000 | 0.000 | 0.000 | 0.300 | 0.000 | 10080.3 | 4619 | 537 | 5156 | 2 | 3 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.500 | 0.650 | 0.500 | 22829.3 | 2842 | 1405 | 4247 | 2 | 2 | Fair - covers some key entities but missing important details |
+| 5 | 0.000 | 0.000 | 0.000 | 0.300 | 0.000 | 24174.4 | 1414 | 1473 | 2887 | 3 | 3 | Poor - missing most key entities or incomplete answer |
+| 6 | 0.500 | 1.000 | 0.333 | 1.000 | 1.000 | 43317.1 | 1077 | 2555 | 3632 | 2 | 3 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 0.500 | 1.000 | 0.333 | 0.533 | 0.333 | 11057.4 | 2708 | 622 | 3330 | 2 | 3 | Fair - covers some key entities but missing important details |
+| 8 | 0.333 | 1.000 | 0.500 | 0.533 | 0.333 | 18031.3 | 2582 | 1074 | 3656 | 3 | 2 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.333 | 0.825 | 0.750 | 13015.1 | 1848 | 795 | 2643 | 4 | 3 | Good - covers most key entities |
+| 10 | 0.000 | 0.000 | 0.000 | 0.533 | 0.333 | 10748.7 | 11835 | 1005 | 12840 | 4 | 5 | Fair - covers some key entities but missing important details |
 
 **性能汇总**:
-- 平均延迟: 9038.7ms
-- 总延迟: 90387.1ms
-- 平均 Prompt Token: 1648
-- 总 Prompt Token: 16479
-- 平均 Completion Token: 570
-- 总 Completion Token: 5699
-- 平均总 Token: 2218
-- 总 Token: 22178
-- 平均答案质量: 0.167
+- 平均延迟: 20691.7ms
+- 总延迟: 206917.1ms
+- 平均 Prompt Token: 3332
+- 总 Prompt Token: 33321
+- 平均 Completion Token: 1253
+- 总 Completion Token: 12531
+- 平均总 Token: 4585
+- 总 Token: 45852
+- 平均答案质量: 0.574
 
 #### full_system
 
@@ -297,7 +297,7 @@
 | travel_agent | full_system_fast | 0.950 | 1.000 | 0.583 | 0.907 | 14474.7 | 2919 |
 | cuezero | llm_only | 0.000 | 0.000 | 0.000 | 0.446 | 21760.5 | 3590 |
 | cuezero | naive_rag | 0.500 | 1.000 | 0.260 | 0.627 | 15034.3 | 14100 |
-| cuezero | structured_rag | 0.000 | 0.000 | 0.000 | 0.167 | 9038.7 | 2218 |
+| cuezero | structured_rag | 0.325 | 0.700 | 0.320 | 0.574 | 20691.7 | 4585 |
 | cuezero | full_system | 0.400 | 0.900 | 0.475 | 0.609 | 82998.6 | 3499 |
 | cuezero | full_system_fast | 0.400 | 0.900 | 0.408 | 0.603 | 11706.0 | 2729 |
 
