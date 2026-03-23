@@ -49,6 +49,7 @@ class LLMOnly:
         """Query using LLM-only approach."""
         start_time = time.time()
 
+        system_prompt = "你是一个代码仓库理解助手。"
         prompt = LLM_ONLY_PROMPT.format(
             repository_content=self.repository_content[:8000],
             query=query
@@ -56,7 +57,7 @@ class LLMOnly:
 
         result = self.llm_service.generate(
             prompt=prompt,
-            system_prompt="你是一个代码仓库理解助手。",
+            system_prompt=system_prompt,
             temperature=0.7,
             max_tokens=2000
         )
@@ -71,6 +72,10 @@ class LLMOnly:
             "prompt_tokens": result["prompt_tokens"],
             "completion_tokens": result["completion_tokens"],
             "total_tokens": result["total_tokens"],
+            "full_prompt": {
+                "system_prompt": system_prompt,
+                "user_prompt": prompt
+            }
         }
 
     def _should_include_file(self, file_path: Path) -> bool:

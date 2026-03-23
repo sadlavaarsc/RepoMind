@@ -40,11 +40,23 @@ class FullSystem:
         """Query using full optimized system."""
         start_time = time.time()
 
-        chunks = self.retrieval_pipeline.retrieve(query)
+        # Retrieval with detailed timings
+        t0 = time.time()
+        chunks, retrieval_timings = self.retrieval_pipeline.retrieve(query)
+        t1 = time.time()
+
+        # Answer generation
+        t2 = time.time()
         result = self.answer_generator.generate(query, chunks)
+        t3 = time.time()
 
         end_time = time.time()
         latency_ms = (end_time - start_time) * 1000
+
+        # Combine all timings
+        detailed_timings = retrieval_timings.copy()
+        detailed_timings["answer_generation"] = (t3 - t2) * 1000
+        detailed_timings["total_end_to_end"] = latency_ms
 
         return {
             "answer": result["answer"],
@@ -53,4 +65,6 @@ class FullSystem:
             "prompt_tokens": result.get("prompt_tokens", 0),
             "completion_tokens": result.get("completion_tokens", 0),
             "total_tokens": result.get("total_tokens", 0),
+            "full_prompt": result.get("full_prompt"),
+            "detailed_timings": detailed_timings,
         }

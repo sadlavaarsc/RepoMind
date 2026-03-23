@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     # LLM Configuration
     qwen_api_key: str
     base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    llm_model: str = "qwen3.5-plus"
+    llm_model: str = "qwen3.5-plus"  # 强 LLM（用于答案生成）
+    llm_model_fast: str = "qwen-flash"  # 快 LLM（用于查询扩展等）
     embedding_model: str = "text-embedding-v4"
 
     # Vector Store Configuration

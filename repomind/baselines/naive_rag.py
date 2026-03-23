@@ -54,4 +54,5 @@ class NaiveRAG:
             "prompt_tokens": result.get("prompt_tokens", 0),
             "completion_tokens": result.get("completion_tokens", 0),
             "total_tokens": result.get("total_tokens", 0),
+            "full_prompt": result.get("full_prompt"),
         }

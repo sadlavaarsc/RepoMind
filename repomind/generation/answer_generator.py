@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from repomind.ingestion.models import CodeChunk
 from repomind.generation.llm_service import LLMService
 
@@ -37,13 +37,19 @@ ANSWER_PROMPT = """请基于以下代码上下文回答问题。
 class AnswerGenerator:
     """Generate answers using retrieved code chunks."""
 
-    def __init__(self, llm_service: LLMService):
-        self.llm_service = llm_service
+    def __init__(
+        self,
+        llm_service: LLMService,
+        llm_service_fast: Optional[LLMService] = None
+    ):
+        self.llm_service = llm_service  # strong LLM (qwen3.5-plus)
+        self.llm_service_fast = llm_service_fast  # fast LLM (qwen-flash)
 
     def generate(
         self,
         query: str,
-        chunks: List[CodeChunk]
+        chunks: List[CodeChunk],
+        use_fast_model: bool = False
     ) -> Dict[str, Any]:
         """
         Generate an answer from query and retrieved chunks.
@@ -51,9 +57,10 @@ class AnswerGenerator:
         Args:
             query: User question.
             chunks: Retrieved code chunks.
+            use_fast_model: Whether to use the fast LLM instead of strong LLM.
 
         Returns:
-            Dictionary with "answer", "sources", and token usage.
+            Dictionary with "answer", "sources", token usage, and full prompt.
         """
         if not chunks:
             return {
@@ -62,12 +69,22 @@ class AnswerGenerator:
                 "prompt_tokens": 0,
                 "completion_tokens": 0,
                 "total_tokens": 0,
+                "full_prompt": None,
+                "model_used": "none",
             }
 
         context = self._format_context(chunks)
         prompt = ANSWER_PROMPT.format(query=query, context=context)
 
-        result = self.llm_service.generate(
+        # 选择使用的 LLM
+        if use_fast_model and self.llm_service_fast is not None:
+            service = self.llm_service_fast
+            model_used = "fast"
+        else:
+            service = self.llm_service
+            model_used = "strong"
+
+        result = service.generate(
             prompt=prompt,
             system_prompt=SYSTEM_PROMPT,
             temperature=0.7,
@@ -82,6 +99,11 @@ class AnswerGenerator:
             "prompt_tokens": result["prompt_tokens"],
             "completion_tokens": result["completion_tokens"],
             "total_tokens": result["total_tokens"],
+            "full_prompt": {
+                "system_prompt": SYSTEM_PROMPT,
+                "user_prompt": prompt
+            },
+            "model_used": model_used,
         }
 
     def _format_context(self, chunks: List[CodeChunk]) -> str:

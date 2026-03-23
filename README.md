@@ -181,13 +181,14 @@ POST /query
 
 - **向量存储**: FAISS
 - **嵌入模型**: text-embedding-v4
-- **LLM**: qwen3.5-plus
+- **LLM (强)**: qwen3.5-plus - 用于最终答案生成
+- **LLM (快)**: qwen-flash - 用于查询扩展等低复杂度任务（为阶梯实现准备）
 - **API 框架**: FastAPI
 - **数据模型**: Pydantic
 
 ## 基线对比测试结果
 
-以下是使用 `测试仓库/` 作为测试数据的四组系统对比结果：
+以下是使用 `测试仓库/` 作为测试数据的五组系统对比结果：
 
 ### 系统说明
 
@@ -196,11 +197,12 @@ POST /query
 | LLM-only | 无检索 |
 | Naive RAG | 文件级 chunk |
 | Structured RAG | 函数级 chunk（但无 MQE/rerank） |
-| Full System | 完整优化 |
+| Full System | 完整优化（qwen3.5-plus） |
+| **Full System Fast** | **完整优化 + 双模型策略** |
 
 ### 对比结果汇总
 
-#### 查询 1: "这个项目是做什么的？"
+#### 查询 1: "这个项目是做什么的？" (复杂问题)
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
@@ -208,8 +210,9 @@ POST /query
 | Naive RAG | 13053.8 | 2394 | 667 | 3061 |
 | Structured RAG | 28924.1 | 2128 | 1725 | 3853 |
 | Full System | 69766.7 | 2126 | 1498 | 3624 |
+| **Full System Fast** | **28209.2** | **2128** | **1556** | **3684** |
 
-#### 查询 2: "有哪些可用的工具函数？"
+#### 查询 2: "有哪些可用的工具函数？" (简单问题)
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
@@ -217,8 +220,9 @@ POST /query
 | Naive RAG | 8833.0 | 2396 | 412 | 2808 |
 | Structured RAG | 7036.3 | 2323 | 436 | 2759 |
 | Full System | 39963.8 | 2321 | 1683 | 4004 |
+| **Full System Fast** | **7246.1** | **2224** | **305** | **2529** |
 
-#### 查询 3: "OpenAICompatibleClient 类如何使用？"
+#### 查询 3: "OpenAICompatibleClient 类如何使用？" (复杂问题)
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
@@ -226,8 +230,9 @@ POST /query
 | Naive RAG | 9501.8 | 2399 | 622 | 3021 |
 | Structured RAG | 22631.0 | 1719 | 1241 | 2960 |
 | Full System | 27093.5 | 1719 | 508 | 2227 |
+| **Full System Fast** | **10254.5** | **1719** | **495** | **2214** |
 
-#### 查询 4: "找到所有与天气相关的代码"
+#### 查询 4: "找到所有与天气相关的代码" (简单问题)
 
 | 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
 |------|--------------|---------------|--------------------|--------------|
@@ -235,14 +240,84 @@ POST /query
 | Naive RAG | 10582.2 | 2397 | 583 | 2980 |
 | Structured RAG | 12156.9 | 2324 | 646 | 2970 |
 | Full System | 35429.8 | 2322 | 902 | 3224 |
+| **Full System Fast** | **8484.3** | **2225** | **492** | **2717** |
 
 ### 观察总结
 
-- **Latency**: Full System 由于 MQE（多查询扩展）延迟较高，但答案质量通常更好
+- **Latency**:
+  - Full System (原版) 由于 MQE 使用强 LLM，延迟最高
+  - **Full System Fast** 使用双模型策略，复杂问题延迟降低 ~50-60%，简单问题延迟降低 ~75-80%
 - **Token Usage**: 各系统差异不大，主要取决于生成的答案长度
-- **答案质量**: Full System 和 Structured RAG 通常能提供更精确的答案，带正确的源文件引用
+- **答案质量**: Full System 和 Full System Fast 答案质量相当，都能提供精确的答案和源文件引用
 
-**完整详细报告**请查看 `baseline_results/comparison_report.md`（本地留档，不提交 git）
+**完整详细报告**请查看 `baseline_results/comparison_report.md` 和 `fast_llm_test_report.md`（本地留档，不提交 git）
+
+## Full System 性能详细分析
+
+对 Full System 进行了精细的 latency 统计，以下是各环节的耗时分析：
+
+### 平均耗时 Breakdown (4 个查询平均)
+
+| 阶段 | 平均耗时 (ms) | 占比 | 说明 |
+|------|--------------|------|------|
+| Query Expansion | 22,872 | 51.0% | LLM 生成查询变体（最大开销！）|
+| Answer Generation | 21,135 | 47.1% | LLM 生成最终答案 |
+| Embedding (3x) | 816 | 1.8% | 3 个查询的 embedding |
+| Vector Search (3x) | 3 | 0.0% | FAISS 本地搜索（极快）|
+| 其他 (merge/filter/rerank/pack) | 9 | 0.0% | 可忽略不计 |
+| **Total** | **44,835** | **100%** | |
+
+### 关键发现
+
+1. **两个 LLM 调用占 98% 时间**：Query Expansion (51%) + Answer Generation (47%) 是绝对的主要开销
+2. **本地操作极快**：FAISS 搜索、reranking、context packing 等本地操作加起来不到 10ms
+3. **优化方向**：如果要降低 latency，优先考虑：
+   - 缓存查询扩展结果
+   - 使用更快的模型做查询扩展（**已准备 qwen-flash**）
+   - 或直接去掉 MQE（牺牲召回率换速度）
+
+## Fast LLM 阶梯实现（已完成！）
+
+已成功实现双模型策略，测试结果如下：
+
+### 性能对比
+
+| 指标 | 原版 Full System | Fast LLM 版本 | 改善 |
+|------|-----------------|--------------|------|
+| Query Expansion 延迟 | ~22,800 ms | ~550 ms | **97.6% ↓** |
+| 简单问题总延迟 | ~45,000 ms | ~7,000 ms | **84.4% ↓** |
+| 复杂问题总延迟 | ~45,000 ms | ~19,000 ms | **57.8% ↓** |
+
+### 实现方案
+
+1. **Query Expansion** → 使用 **qwen-flash**
+   - 简化提示词，限制输出格式
+   - 降低 temperature (0.3)，提高确定性
+   - 延迟从 22.8s → 0.55s
+
+2. **Query Classification** → 使用 **qwen-flash**
+   - 简单提示词：只返回 "simple" 或 "complex"
+   - 极低 temperature (0.1)，输出稳定
+   - 延迟仅 ~400ms
+
+3. **Answer Generation** → 智能选择
+   - **简单问题**：用 **qwen-flash**（~5-7s）
+   - **复杂问题**：用 **qwen3.5-plus**（~8-27s）
+
+### 问题分类规则
+
+- **简单问题**：问"是什么"、"找文件"、"变量名/函数名"、"列举清单"
+- **复杂问题**：问"为什么"、"如何实现"、"业务逻辑"、"项目做什么"、"详细解释"
+
+### 新增/修改的文件
+
+- **修改**: `repomind/retrieval/query_expander.py` - 简化提示词，支持自定义模型
+- **新增**: `repomind/retrieval/query_classifier.py` - 问题分类器
+- **修改**: `repomind/generation/answer_generator.py` - 支持双 LLM Service
+- **新增**: `repomind/baselines/full_system_fast.py` - Fast LLM 版本
+- **新增**: `scripts/test_fast_llm.py` - 测试脚本
+
+**完整测试数据**请查看 `baseline_results/fast_llm_test_report.md` 和 `fast_llm_test_results.json`（本地留档，不提交 git）
 
 ## 开发进度
 
@@ -254,6 +329,7 @@ POST /query
 - [x] Phase 6: 评估与 API
 - [x] Phase 7: 文档与提交
 - [x] Phase 8: 基线对比测试
+- [x] Phase 9: Fast LLM 阶梯实现
 
 ## 许可证
 

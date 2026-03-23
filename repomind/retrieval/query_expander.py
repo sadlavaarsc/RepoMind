@@ -2,10 +2,8 @@ from typing import List
 from openai import OpenAI
 
 
-QUERY_EXPANDER_PROMPT = """你是一个查询扩展助手。给定一个关于代码仓库的问题，请生成 2-3 个语义相似的查询变体，以提高检索的召回率。
-
-请只返回查询变体，每行一个，不要其他解释。
-
+# 简化的提示词，专门为 fast LLM 设计
+QUERY_EXPANDER_PROMPT = """生成{num_variants}个相似查询，每行一个，不要其他内容。
 原始问题: {query}
 """
 
@@ -19,7 +17,7 @@ class QueryExpander:
         self.model = model
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
-    def expand(self, query: str, num_variants: int = 3) -> List[str]:
+    def expand(self, query: str, num_variants: int = 2) -> List[str]:
         """
         Expand a query into multiple variants.
 
@@ -30,13 +28,14 @@ class QueryExpander:
         Returns:
             List of query variants, including the original query.
         """
-        prompt = QUERY_EXPANDER_PROMPT.format(query=query)
+        prompt = QUERY_EXPANDER_PROMPT.format(query=query, num_variants=num_variants)
 
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.7
+                temperature=0.3,  # 降低温度，提高输出确定性
+                max_tokens=200  # 限制输出长度
             )
             content = response.choices[0].message.content
             variants = self._parse_response(content)
@@ -51,8 +50,8 @@ class QueryExpander:
         variants = []
         for line in content.splitlines():
             line = line.strip()
-            if line and not line.startswith("原始问题"):
-                line = line.lstrip("0123456789. -•")
-                if line:
+            if line and len(line) > 3:  # 过滤掉太短的行
+                line = line.lstrip("0123456789. -•*")
+                if line and len(line) > 3:
                     variants.append(line.strip())
         return variants
