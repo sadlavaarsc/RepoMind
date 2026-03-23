@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     rerank_alpha: float = 0.7  # Weight for embedding score
     rerank_beta: float = 0.3   # Weight for keyword overlap
 
+    # Query Expansion Configuration
+    enable_query_expansion: bool = True
+    query_expansion_variants: int = 2  # Number of variants to generate (original + N)
+
+    # Query Classification Configuration
+    enable_query_classification: bool = True  # Enable/disable question complexity classification
+
     # Generation Configuration
     max_context_tokens: int = 4000
 
