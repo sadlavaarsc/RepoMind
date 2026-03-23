@@ -54,15 +54,16 @@ class RetrievalPipeline:
         t2 = time.time()
         all_results = []
         seen = set()
-        embedding_time = 0.0
+
+        # Batch embedding for all queries at once (optimization)
+        t_emb_start = time.time()
+        query_embeddings = self.embedding_service.embed_batch(expanded_queries)
+        t_emb_end = time.time()
+        embedding_time = (t_emb_end - t_emb_start) * 1000
+
+        # Vector search for each query
         search_time = 0.0
-
-        for exp_query in expanded_queries:
-            t_emb_start = time.time()
-            query_embedding = self.embedding_service.embed(exp_query)
-            t_emb_end = time.time()
-            embedding_time += (t_emb_end - t_emb_start) * 1000
-
+        for exp_query, query_embedding in zip(expanded_queries, query_embeddings):
             t_search_start = time.time()
             results = self.vector_store.search(query_embedding, top_k=self.top_k)
             t_search_end = time.time()

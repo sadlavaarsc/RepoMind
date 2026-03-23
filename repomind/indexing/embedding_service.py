@@ -5,6 +5,9 @@ from openai import OpenAI
 class EmbeddingService:
     """Service for generating embeddings using OpenAI-compatible API."""
 
+    # Qwen 嵌入模型限制：一次最多 10 个
+    MAX_BATCH_SIZE = 10
+
     def __init__(self, api_key: str, base_url: str, model: str = "text-embedding-v4"):
         self.api_key = api_key
         self.base_url = base_url
@@ -29,7 +32,7 @@ class EmbeddingService:
 
     def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """
-        Embed a batch of texts.
+        Embed a batch of texts with automatic batching (max 10 per request).
 
         Args:
             texts: List of texts to embed.
@@ -37,8 +40,16 @@ class EmbeddingService:
         Returns:
             List of embedding vectors.
         """
-        response = self.client.embeddings.create(
-            model=self.model,
-            input=texts
-        )
-        return [item.embedding for item in response.data]
+        all_embeddings = []
+
+        # 分批处理，每批不超过 MAX_BATCH_SIZE
+        for i in range(0, len(texts), self.MAX_BATCH_SIZE):
+            batch = texts[i:i + self.MAX_BATCH_SIZE]
+            response = self.client.embeddings.create(
+                model=self.model,
+                input=batch
+            )
+            batch_embeddings = [item.embedding for item in response.data]
+            all_embeddings.extend(batch_embeddings)
+
+        return all_embeddings
