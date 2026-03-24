@@ -239,9 +239,21 @@ def main():
                               for i, q in enumerate(LEGACY_QUERIES)]
         test_queries = LEGACY_QUERIES
 
-    results_dir_name = "baseline_results"
-    if args.suffix:
-        results_dir_name += f"_{args.suffix}"
+    # Get selected systems
+    selected_systems = get_selected_systems(args)
+    selected_display_names = list(selected_systems.values())
+
+    # Determine results directory name
+    if len(selected_systems) == 1 and args.test_repo and args.suffix:
+        # Single system with test_repo and suffix: use archive format
+        sys_key = list(selected_systems.keys())[0]
+        results_dir_name = f"baseline_results_{args.test_repo}_{sys_key}_{args.suffix}"
+    else:
+        # Multiple systems or no test_repo: use default format
+        results_dir_name = "baseline_results"
+        if args.suffix:
+            results_dir_name += f"_{args.suffix}"
+
     results_dir = Path(__file__).parent.parent / results_dir_name
     results_dir.mkdir(exist_ok=True, parents=True)
 
@@ -249,10 +261,6 @@ def main():
     cache_dir = Path(args.cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
     use_cache = not args.no_cache
-
-    # Get selected systems
-    selected_systems = get_selected_systems(args)
-    selected_display_names = list(selected_systems.values())
 
     print("=" * 80)
     print("RepoMind Baseline Comparison Test")
