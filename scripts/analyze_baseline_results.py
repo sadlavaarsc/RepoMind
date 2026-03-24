@@ -351,6 +351,7 @@ def main():
         ("llm_only", "travel_agent"),
         ("naive_rag", "travel_agent"),
         ("structured_rag", "travel_agent"),
+        ("structured_rag_new_chunk", "travel_agent"),
         ("full_system", "travel_agent"),
         ("full_system_fast", "travel_agent"),
     ]
@@ -371,6 +372,7 @@ def main():
         ("llm_only", "cuezero"),
         ("naive_rag", "cuezero"),
         ("structured_rag", "cuezero"),
+        ("structured_rag_new_chunk", "cuezero"),
         ("full_system", "cuezero"),
         ("full_system_fast", "cuezero"),
     ]
@@ -411,7 +413,7 @@ def generate_summary_report(all_results: List[Dict[str, Any]], output_path: Path
     """Generate a comprehensive summary report."""
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("# RepoMind 基线测试完整指标总结\n\n")
-        f.write(f"**测试日期**: 2026-03-23\n\n")
+        f.write(f"**测试日期**: 2026-03-24\n\n")
 
         # Summary by repo
         for repo in ["travel_agent", "cuezero"]:

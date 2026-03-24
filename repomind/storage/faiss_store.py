@@ -26,7 +26,13 @@ class FAISSStore(VectorStore):
         if embeddings is None:
             if self.embedding_service is None:
                 raise ValueError("embedding_service must be provided when embeddings are not given")
-            texts = [chunk.content for chunk in chunks]
+            # Use get_embedding_text() if available, otherwise fall back to content
+            texts = []
+            for chunk in chunks:
+                if hasattr(chunk, "get_embedding_text") and callable(chunk.get_embedding_text):
+                    texts.append(chunk.get_embedding_text())
+                else:
+                    texts.append(chunk.content)
             embeddings = self.embedding_service.embed_batch(texts)
 
         if self.index is None:

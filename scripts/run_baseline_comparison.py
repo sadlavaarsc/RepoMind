@@ -110,6 +110,12 @@ def parse_args():
         help="Test repository to use (travel_agent or cuezero)"
     )
     parser.add_argument(
+        "--suffix",
+        type=str,
+        default=None,
+        help="Suffix to append to results directory (e.g., 'new_chunk')"
+    )
+    parser.add_argument(
         "--queries",
         type=str,
         default=None,
@@ -233,8 +239,11 @@ def main():
                               for i, q in enumerate(LEGACY_QUERIES)]
         test_queries = LEGACY_QUERIES
 
-    results_dir = Path(__file__).parent.parent / "baseline_results"
-    results_dir.mkdir(exist_ok=True)
+    results_dir_name = "baseline_results"
+    if args.suffix:
+        results_dir_name += f"_{args.suffix}"
+    results_dir = Path(__file__).parent.parent / results_dir_name
+    results_dir.mkdir(exist_ok=True, parents=True)
 
     # Setup cache directory
     cache_dir = Path(args.cache_dir)

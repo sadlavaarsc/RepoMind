@@ -1,6 +1,6 @@
 # RepoMind 基线测试完整指标总结
 
-**测试日期**: 2026-03-23
+**测试日期**: 2026-03-24
 
 ## travel_agent 项目
 
@@ -9,6 +9,7 @@
 | llm_only | 0.000 | 0.000 | 0.000 | 0.842 | 14463.6 | 3136 |
 | naive_rag | 1.000 | 1.000 | 0.480 | 0.953 | 12789.5 | 3163 |
 | structured_rag | 0.950 | 1.000 | 0.583 | 0.930 | 13869.1 | 2998 |
+| structured_rag_new_chunk | 0.975 | 1.000 | 0.642 | 0.901 | 15115.2 | 2686 |
 | full_system | 0.950 | 1.000 | 0.583 | 0.918 | 36984.0 | 3123 |
 | full_system_fast | 0.950 | 1.000 | 0.583 | 0.907 | 14474.7 | 2919 |
 
@@ -92,6 +93,32 @@
 - 总 Token: 29982
 - 平均答案质量: 0.930
 
+#### structured_rag_new_chunk
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 25129.4 | 1683 | 1526 | 3209 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 23223.0 | 2188 | 1465 | 3653 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 16468.1 | 2191 | 1044 | 3235 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 5728.3 | 1665 | 268 | 1933 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 1.000 | 1.000 | 0.333 | 0.650 | 0.500 | 12158.2 | 1695 | 604 | 2299 | 1 | 3 | Fair - covers some key entities but missing important details |
+| 6 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 8249.4 | 1546 | 508 | 2054 | 2 | 2 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.333 | 0.767 | 0.667 | 10734.8 | 1745 | 663 | 2408 | 1 | 3 | Good - covers most key entities |
+| 8 | 0.750 | 1.000 | 1.000 | 0.825 | 0.750 | 13937.0 | 1696 | 694 | 2390 | 4 | 3 | Good - covers most key entities |
+| 9 | 1.000 | 1.000 | 0.500 | 1.000 | 1.000 | 11059.0 | 2064 | 626 | 2690 | 2 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 10 | 1.000 | 1.000 | 1.000 | 0.767 | 0.667 | 24464.6 | 1687 | 1297 | 2984 | 4 | 4 | Good - covers most key entities |
+
+**性能汇总**:
+- 平均延迟: 15115.2ms
+- 总延迟: 151151.8ms
+- 平均 Prompt Token: 1816
+- 总 Prompt Token: 18160
+- 平均 Completion Token: 870
+- 总 Completion Token: 8695
+- 平均总 Token: 2686
+- 总 Token: 26855
+- 平均答案质量: 0.901
+
 #### full_system
 
 | 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
@@ -151,6 +178,7 @@
 | llm_only | 0.000 | 0.000 | 0.000 | 0.446 | 21760.5 | 3590 |
 | naive_rag | 0.500 | 1.000 | 0.260 | 0.627 | 15034.3 | 14100 |
 | structured_rag | 0.325 | 0.700 | 0.320 | 0.574 | 20691.7 | 4585 |
+| structured_rag_new_chunk | 0.400 | 0.900 | 0.348 | 0.533 | 18503.5 | 3420 |
 | full_system | 0.400 | 0.900 | 0.475 | 0.609 | 82998.6 | 3499 |
 | full_system_fast | 0.400 | 0.900 | 0.408 | 0.603 | 11706.0 | 2729 |
 
@@ -234,6 +262,32 @@
 - 总 Token: 45852
 - 平均答案质量: 0.574
 
+#### structured_rag_new_chunk
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.500 | 1.000 | 0.200 | 0.533 | 0.333 | 9745.7 | 3665 | 612 | 4277 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 0.667 | 1.000 | 1.000 | 0.533 | 0.333 | 16251.1 | 702 | 1156 | 1858 | 3 | 2 | Fair - covers some key entities but missing important details |
+| 3 | 0.500 | 1.000 | 0.200 | 0.475 | 0.250 | 10846.4 | 4661 | 604 | 5265 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.333 | 0.650 | 0.500 | 20910.7 | 1185 | 1417 | 2602 | 2 | 3 | Fair - covers some key entities but missing important details |
+| 5 | 0.000 | 0.000 | 0.000 | 0.300 | 0.000 | 24799.3 | 1165 | 1468 | 2633 | 3 | 3 | Poor - missing most key entities or incomplete answer |
+| 6 | 0.500 | 1.000 | 0.333 | 0.650 | 0.500 | 48662.0 | 1103 | 3117 | 4220 | 2 | 3 | Fair - covers some key entities but missing important details |
+| 7 | 0.500 | 1.000 | 0.333 | 0.300 | 0.000 | 10876.6 | 2658 | 676 | 3334 | 2 | 3 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 0.500 | 0.533 | 0.333 | 15341.1 | 2037 | 883 | 2920 | 3 | 2 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.333 | 0.825 | 0.750 | 9622.1 | 1859 | 591 | 2450 | 4 | 3 | Good - covers most key entities |
+| 10 | 0.250 | 1.000 | 0.250 | 0.533 | 0.333 | 17980.4 | 3487 | 1149 | 4636 | 4 | 4 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 18503.5ms
+- 总延迟: 185035.4ms
+- 平均 Prompt Token: 2252
+- 总 Prompt Token: 22522
+- 平均 Completion Token: 1167
+- 总 Completion Token: 11673
+- 平均总 Token: 3420
+- 总 Token: 34195
+- 平均答案质量: 0.533
+
 #### full_system
 
 | 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
@@ -293,11 +347,13 @@
 | travel_agent | llm_only | 0.000 | 0.000 | 0.000 | 0.842 | 14463.6 | 3136 |
 | travel_agent | naive_rag | 1.000 | 1.000 | 0.480 | 0.953 | 12789.5 | 3163 |
 | travel_agent | structured_rag | 0.950 | 1.000 | 0.583 | 0.930 | 13869.1 | 2998 |
+| travel_agent | structured_rag_new_chunk | 0.975 | 1.000 | 0.642 | 0.901 | 15115.2 | 2686 |
 | travel_agent | full_system | 0.950 | 1.000 | 0.583 | 0.918 | 36984.0 | 3123 |
 | travel_agent | full_system_fast | 0.950 | 1.000 | 0.583 | 0.907 | 14474.7 | 2919 |
 | cuezero | llm_only | 0.000 | 0.000 | 0.000 | 0.446 | 21760.5 | 3590 |
 | cuezero | naive_rag | 0.500 | 1.000 | 0.260 | 0.627 | 15034.3 | 14100 |
 | cuezero | structured_rag | 0.325 | 0.700 | 0.320 | 0.574 | 20691.7 | 4585 |
+| cuezero | structured_rag_new_chunk | 0.400 | 0.900 | 0.348 | 0.533 | 18503.5 | 3420 |
 | cuezero | full_system | 0.400 | 0.900 | 0.475 | 0.609 | 82998.6 | 3499 |
 | cuezero | full_system_fast | 0.400 | 0.900 | 0.408 | 0.603 | 11706.0 | 2729 |
 
