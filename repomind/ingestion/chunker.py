@@ -144,62 +144,209 @@ class Chunker:
 
     def _chunk_markdown(self, file_path: str, content: str) -> List[CodeChunk]:
         """
-        Markdown 分块策略：
-        1. 文件级 chunk（完整内容）
-        2. 按 #/##/### 标题分块
+        Markdown 分块策略（改进版）：
+        1. 检测代码块边界，避免误识别代码注释
+        2. 解析标题层级，自动确定最高级标题
+        3. 按最高级+1层级切分（例如最高级是h2则按h3切分，或h1按h2切分）
+        4. 自动合并过短的 chunks
+        """
+        # 配置参数
+        MIN_CHUNK_LENGTH = 200  # 最小 chunk 长度（字符）
+        MAX_CHUNK_LENGTH = 4000  # 最大 chunk 长度（字符）
+
+        lines = content.split('\n')
+        chunks = []
+
+        # Phase 1: 提取结构信息 - 标题位置、代码块边界
+        headings, in_code_block = self._extract_markdown_structure(lines)
+
+        if not headings:
+            # 没有标题，整个文件作为一个 chunk
+            return [CodeChunk(
+                content=content,
+                file_path=file_path,
+                function_name=None,
+                class_name=None,
+                language="markdown",
+                chunk_type="file",
+                name=Path(file_path).name
+            )]
+
+        # Phase 2: 确定切分层级 - 找到最高级标题，然后切分下一级
+        min_level = min(h[1] for h in headings)
+        split_level = min_level + 1  # 最高级是 h1 则按 h2 切分，最高级是 h2 则按 h3 切分
+
+        # Phase 3: 生成初始 chunks
+        initial_chunks = self._create_chunks_by_level(
+            lines, headings, split_level, min_level, file_path
+        )
+
+        # Phase 4: 合并短 chunks
+        merged_chunks = self._merge_short_chunks(
+            initial_chunks, MIN_CHUNK_LENGTH, MAX_CHUNK_LENGTH
+        )
+
+        return merged_chunks
+
+    def _extract_markdown_structure(self, lines):
+        """
+        Phase 1: 提取 Markdown 结构信息
+        返回: (headings, in_code_block)
+          - headings: [(line_idx, level, text), ...]
+          - in_code_block: [bool, ...] 表示每行是否在代码块内
+        """
+        headings = []
+        in_code_block = [False] * len(lines)
+        code_block_state = False
+
+        for i, line in enumerate(lines):
+            in_code_block[i] = code_block_state
+
+            # 检测代码块边界
+            stripped = line.strip()
+            if stripped.startswith('```'):
+                code_block_state = not code_block_state
+                continue
+
+            # 在代码块内，不检测标题
+            if code_block_state:
+                continue
+
+            # 检测标题
+            if line.startswith('#'):
+                # 计算标题层级
+                level = 0
+                while level < len(line) and line[level] == '#':
+                    level += 1
+                # 确保 # 后面有空格或标题结束
+                if level < len(line) and (line[level] == ' ' or line[level] == '\t'):
+                    heading_text = line.strip()
+                    headings.append((i, level, heading_text))
+
+        return headings, in_code_block
+
+    def _create_chunks_by_level(self, lines, headings, split_level, min_level, file_path):
+        """
+        Phase 3: 按指定层级创建 chunks
+        策略：
+        - 如果有 split_level 的标题，按 split_level 切分
+        - 如果没有 split_level 的标题，按 min_level 切分
+        - 每个 chunk 包含标题及其所有子内容
         """
         chunks = []
 
-        # 1. 文件级 chunk
-        chunks.append(CodeChunk(
-            content=content,
-            file_path=file_path,
-            function_name=None,
-            class_name=None,
-            language="markdown",
-            chunk_type="file",
-            name=Path(file_path).name
-        ))
+        # 确定实际使用的切分层级
+        split_headings = [h for h in headings if h[1] == split_level]
+        if not split_headings:
+            split_headings = [h for h in headings if h[1] == min_level]
 
-        # 2. 按标题分块
-        lines = content.split('\n')
-        current_section = []
-        current_heading = None
+        if not split_headings:
+            # 没有找到切分用的标题，返回整个文件
+            return [CodeChunk(
+                content='\n'.join(lines),
+                file_path=file_path,
+                function_name=None,
+                class_name=None,
+                language="markdown",
+                chunk_type="file",
+                name=Path(file_path).name
+            )]
 
-        for line in lines:
-            if line.startswith('#'):
-                # 保存上一个 section
-                if current_section and current_heading:
-                    section_content = '\n'.join(current_section)
-                    chunks.append(CodeChunk(
-                        content=section_content,
-                        file_path=file_path,
-                        function_name=None,
-                        class_name=None,
-                        language="markdown",
-                        chunk_type="section",
-                        name=current_heading
-                    ))
-                # 开始新 section
-                current_heading = line.strip()
-                current_section = [line]
-            else:
-                current_section.append(line)
+        # 为每个切分标题确定内容范围
+        for i, (start_line, level, heading_text) in enumerate(split_headings):
+            # 找到下一个同级或更高级标题的位置
+            end_line = len(lines)
+            for j in range(i + 1, len(split_headings)):
+                next_start = split_headings[j][0]
+                if next_start > start_line:
+                    end_line = next_start
+                    break
 
-        # 保存最后一个 section
-        if current_section and current_heading:
-            section_content = '\n'.join(current_section)
+            # 还需要检查是否有更高级的标题在中间
+            for h in headings:
+                h_line, h_level, _ = h
+                if h_line > start_line and h_line < end_line and h_level <= level:
+                    end_line = h_line
+                    break
+
+            # 提取内容
+            chunk_lines = lines[start_line:end_line]
+            chunk_content = '\n'.join(chunk_lines)
+
             chunks.append(CodeChunk(
-                content=section_content,
+                content=chunk_content,
                 file_path=file_path,
                 function_name=None,
                 class_name=None,
                 language="markdown",
                 chunk_type="section",
-                name=current_heading
+                name=heading_text
             ))
 
+        # 检查开头是否有前置内容（在第一个切分标题之前）
+        first_split_line = split_headings[0][0]
+        if first_split_line > 0:
+            prefix_content = '\n'.join(lines[:first_split_line]).strip()
+            if prefix_content:
+                chunks.insert(0, CodeChunk(
+                    content='\n'.join(lines[:first_split_line]),
+                    file_path=file_path,
+                    function_name=None,
+                    class_name=None,
+                    language="markdown",
+                    chunk_type="section",
+                    name="前置内容"
+                ))
+
         return chunks
+
+    def _merge_short_chunks(self, chunks, min_length, max_length):
+        """
+        Phase 4: 合并过短的 chunks
+        策略：
+        - 从前往后扫描，遇到短 chunk 时尝试与后面的合并
+        - 优先合并同一层级的
+        - 不超过最大长度限制
+        """
+        if len(chunks) <= 1:
+            return chunks
+
+        merged = []
+        current_chunk = None
+
+        for chunk in chunks:
+            if current_chunk is None:
+                current_chunk = chunk
+            else:
+                current_len = len(current_chunk.content)
+                new_len = len(chunk.content)
+
+                # 如果当前 chunk 太短，尝试合并
+                if current_len < min_length and (current_len + new_len) <= max_length:
+                    # 合并
+                    merged_content = current_chunk.content + '\n' + chunk.content
+                    merged_name = current_chunk.name
+                    if chunk.name != "前置内容":
+                        merged_name = merged_name + " + " + chunk.name
+
+                    current_chunk = CodeChunk(
+                        content=merged_content,
+                        file_path=chunk.file_path,
+                        function_name=chunk.function_name,
+                        class_name=chunk.class_name,
+                        language=chunk.language,
+                        chunk_type=chunk.chunk_type,
+                        name=merged_name
+                    )
+                else:
+                    # 当前 chunk 足够长，或者合并后太长
+                    merged.append(current_chunk)
+                    current_chunk = chunk
+
+        if current_chunk is not None:
+            merged.append(current_chunk)
+
+        return merged
 
     def _chunk_file_heuristic(self, file_path: str) -> List[CodeChunk]:
         """Simple heuristic chunking for unsupported languages."""
