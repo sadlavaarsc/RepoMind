@@ -8,8 +8,11 @@ RepoMind 是一个模块化的代码仓库理解系统，使用 RAG 技术来回
 
 ### 核心特性
 
-- **代码感知的分块**: 基于 Python AST 的函数级代码分块
+- **多级代码感知分块**: 基于 Python AST 的 file/class/function/block 多级分块，带结构化数据提取
+- **LLM 摘要生成**: 建库时自动为每个 chunk 生成 LLM 摘要，提升检索质量
 - **多阶段检索 Pipeline**: 查询扩展 + 向量搜索 + 元数据过滤 + 重排序
+- **中文关键词优化**: 支持中文 2-gram + 3-gram 匹配，无意义代词排除
+- **混合答案生成**: 简单问题用 fast 模型，复杂问题用 strong 模型
 - **可扩展架构**: 向量存储抽象层，便于未来迁移到 Qdrant
 - **FastAPI 服务**: 生产就绪的 API 接口
 
@@ -77,92 +80,181 @@ conda activate agentEnv && uvicorn repomind.api.main:app --reload
 
 API 文档访问: http://localhost:8000/docs
 
-## Demo 输出示例
-
-以下是使用 `测试仓库/` 作为测试数据的实际运行输出：
-
-### 查询 1: "这个项目是做什么的？"
+## 系统架构
 
 ```
-Answer:
-这个项目是一个基于大语言模型（LLM）的**智能旅行助手 Agent**。它实现了 ReAct（Reasoning + Acting）模式，能够理解用户请求，自主规划步骤并调用工具来完成任务。
-
-主要功能模块如下：
-1.  **提示词工程**：在 `prompt.py` 中定义了 `AGENT_SYSTEM_PROMPT`，设定了助手身份、可用工具列表及严格的输出格式（Thought-Action）。
-2.  **模型调用**：通过 `ai_client.py` 中的 `OpenAICompatibleClient` 类及其 `generate` 函数，对接大语言模型 API 生成回复。
-3.  **代理逻辑**：`agent.py` 是核心执行文件，负责维护对话历史，解析模型输出的行动指令，调用本地工具（如 `get_weather.py` 中的 `get_weather` 函数），并将执行结果（Observation）反馈给模型，形成闭环。
-4.  **工具能力**：目前实现了查询天气（`get_weather`）和根据天气推荐景点（`get_attraction`）的功能。
-
-参考文件：
-- /测试仓库/prompt.py
-- /测试仓库/ai_client.py
-- /测试仓库/agent.py
-- /测试仓库/get_weather.py
-
-Sources:
-  - /测试仓库/ai_client.py
-  - /测试仓库/agent.py
-  - /测试仓库/prompt.py
-  - /测试仓库/get_weather.py
-
-Latency: 40673.1ms
-Tokens: 3560 (prompt: 2126, completion: 1434)
+┌─────────────────────────────────────────────────────────────────┐
+│                         RepoMind 系统架构                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐   │
+│  │   查询输入    │ →  │  查询扩展     │ →  │  查询分类     │   │
+│  │  (Query)     │    │  (MQE)       │    │  (Classifier) │   │
+│  └──────────────┘    └──────────────┘    └──────────────┘   │
+│         ↓                   ↓                   ↓              │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │                  多阶段检索 Pipeline                       │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │  1. 向量检索 (FAISS) → Top 20                           │  │
+│  │  2. 分桶保证 (文档+代码)                                 │  │
+│  │  3. 关键词打分 (中文 n-gram + 无意义词过滤)              │  │
+│  │  4. MMR 重排序 (多样性保证)                              │  │
+│  │  5. 最终选择 (Top 5)                                     │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│         ↓                                                        │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │                  上下文构建                                │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │  - Chunk Summary (LLM 生成)                              │  │
+│  │  - Structured Data (imports, signatures, calls)         │  │
+│  │  - 原始代码 (可选)                                       │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│         ↓                                                        │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │                  答案生成 (双模型策略)                     │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │  简单问题 → qwen-flash (快速)                            │  │
+│  │  复杂问题 → qwen3.5-plus (高质量)                        │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│         ↓                                                        │
+│  ┌──────────────┐                                               │
+│  │   答案输出    │                                               │
+│  │  (Answer)    │                                               │
+│  └──────────────┘                                               │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### 查询 2: "有哪些可用的工具函数？"
+## 核心模块说明
 
-```
-Answer:
-根据提供的代码上下文，系统中主要定义了以下两个可用的工具函数，它们在 `agent.py` 的 `available_tools` 字典中被注册，并在 `prompt.py` 的系统提示中进行了说明：
+### 1. Ingestion (数据摄入)
 
-1.  **`get_weather`**
-    *   **功能**：查询指定城市的天气信息（目前支持上海、北京、广州、深圳、杭州等有限城市）。
-    *   **定义位置**：`get_weather.py` 文件中的 `get_weather` 函数。
+**位置**: `repomind/ingestion/`
 
-2.  **`get_attraction`**
-    *   **功能**：根据城市和天气情况，使用 Tavily Search API 搜索并返回优化的旅游景点推荐。
-    *   **定义位置**：`get_attraction.py` 文件中的 `get_attraction` 函数。
+- **chunker.py**: 多级代码分块器
+  - file 级: 整个模块概览
+  - class 级: 类的职责和方法
+  - function 级: 函数的输入输出和调用关系
+  - block 级: 脚本文件中的代码块
 
-参考文件：
-- /测试仓库/agent.py
-- /测试仓库/get_weather.py
-- /测试仓库/get_attraction.py
-- /测试仓库/prompt.py
+- **summary_generator.py**: LLM 摘要生成器
+  - 使用 qwen-flash 快速生成
+  - 仅用结构化数据，不用完整代码
+  - 摘要内容包含在嵌入文本中
 
-Sources:
-  - /测试仓库/get_attraction.py
-  - /测试仓库/ai_client.py
-  - /测试仓库/prompt.py
-  - /测试仓库/agent.py
-  - /测试仓库/get_weather.py
+- **models.py**: CodeChunk 数据模型
+  - chunk_type, name, signature, docstring
+  - summary, structured_data
+  - embedding_text (用于嵌入)
 
-Latency: 45240.9ms
-Tokens: 3976 (prompt: 2323, completion: 1653)
-```
+### 2. Retrieval (检索)
 
-### 查询 3: "OpenAICompatibleClient 类如何使用？"
+**位置**: `repomind/retrieval/`
 
-```
-Answer:
-使用 `OpenAICompatibleClient` 类的步骤如下：
+- **pipeline.py**: 多阶段检索 Pipeline
+  - 查询扩展 (MQE)
+  - 向量搜索
+  - 重排序
 
-1.  **导入类**：从 `ai_client.py` 模块导入 `OpenAICompatibleClient`。
-2.  **初始化实例**：调用 `__init__` 方法，传入 `model`、`api_key` 和 `base_url` 参数配置客户端。
-3.  **生成响应**：调用 `generate` 方法，传入 `prompt`（用户提示）和 `system_prompt`（系统指令）参数获取模型返回的内容。
+- **query_expander.py**: 查询扩展器
+  - 支持自定义模型
+  - 生成多个查询变体
 
-具体使用示例可见 `agent.py` 中的实例化与循环调用过程。
+- **query_classifier.py**: 查询分类器
+  - simple/complex 二分类
+  - 用于双模型策略
 
-参考文件：
-- /测试仓库/ai_client.py
-- /测试仓库/agent.py
+- **reranker.py**: 重排序器 (最新优化!)
+  - 分桶保证: 至少 1 个文档 + 1 个代码
+  - 中文优化: 2-gram + 3-gram 匹配
+  - 无意义词过滤: 中文代词排除表
+  - MMR 多样性: Maximal Marginal Relevance
+  - 权重调整: alpha=0.85 (余弦), beta=0.15 (关键词)
 
-Sources:
-  - /测试仓库/ai_client.py
-  - /测试仓库/agent.py
+### 3. Generation (答案生成)
 
-Latency: 42964.7ms
-Tokens: 3358 (prompt: 1721, completion: 1637)
-```
+**位置**: `repomind/generation/`
+
+- **answer_generator.py**: 答案生成器
+  - 支持双 LLM Service
+  - 智能选择模型
+
+- **llm_service.py**: LLM 服务封装
+  - OpenAI 兼容接口
+  - 支持自定义 base_url 和 model
+
+### 4. Evaluation (评估)
+
+**位置**: `repomind/evaluation/`
+
+- **retrieval_metrics.py**: 检索指标
+  - 召回率 (Recall)
+  - 命中率 (Hit Rate)
+  - 精确率 (Precision)
+
+- **llm_evaluator.py**: LLM 答案评估
+  - 充分性 (Sufficiency)
+  - 正确性 (Correctness)
+  - 事实性 (Grounding)
+
+- **llm_metrics.py**: LLM 指标聚合
+  - 可回答率
+  - 端到端成功率
+  - 检索差距
+
+## 完整基线测试结果 (2026-03-26)
+
+### 测试项目
+
+1. **travel_agent** (小项目): 基于 LLM 的旅行助手 Agent
+2. **cuezero** (中大型项目): 高性能台球 AI 系统
+
+### 测试系统
+
+| 系统 | 特点 |
+|------|------|
+| LLM-only | 无检索 |
+| Naive RAG | 文件级 chunk |
+| Structured RAG | 函数级 chunk |
+| Full System | 完整优化（qwen3.5-plus） |
+| Full System Fast | 完整优化 + 双模型策略（qwen-flash + qwen3.5-plus） |
+
+### travel_agent 项目结果
+
+| 系统 | 平均召回率 | 平均命中率 | 可回答率 | 端到端成功率 | 平均延迟(ms) |
+|------|-----------|-----------|---------|------------|------------|
+| llm_only | 0.000 | 0.000 | 0.0% | 40.0% | 14463.6 |
+| naive_rag | 1.000 | 1.000 | 90.0% | 100.0% | 12789.5 |
+| structured_rag | 0.950 | 1.000 | 80.0% | 100.0% | 13869.1 |
+| full_system (chinese_rerank_fix) | 0.975 | 1.000 | 90.0% | 100.0% | 94292.8 |
+| full_system_fast (chinese_rerank_fix) | 0.975 | 1.000 | 90.0% | 100.0% | 65952.5 |
+
+### cuezero 项目结果
+
+| 系统 | 平均召回率 | 平均命中率 | 可回答率 | 端到端成功率 | 平均延迟(ms) |
+|------|-----------|-----------|---------|------------|------------|
+| llm_only | 0.000 | 0.000 | 0.0% | 20.0% | 19103.3 |
+| naive_rag | 0.633 | 1.000 | 60.0% | 60.0% | 20927.2 |
+| structured_rag | 0.500 | 1.000 | 60.0% | 50.0% | 22037.6 |
+| full_system (chinese_rerank_fix) | 0.450 | 1.000 | 100.0% | 80.0% | 223784.0 |
+| full_system_fast (chinese_rerank_fix) | 0.450 | 1.000 | 100.0% | 90.0% | 183836.5 |
+
+### 关键改进 (chinese_rerank_fix)
+
+1. **中文关键词匹配优化**
+   - 添加 2-gram + 3-gram 匹配
+   - 无意义代词排除表 ("我", "我们", "你", "你们" 等)
+   - README_zh.md 现在能正确被检索出来了!
+
+2. **权重调整**
+   - alpha=0.85 (余弦相似度权重)
+   - beta=0.15 (关键词分数权重)
+   - 关键词分数作为"锦上添花"，不是主要决定因素
+
+3. **分桶保证**
+   - 至少 1 个文档 chunk
+   - 至少 1 个代码 chunk
+   - 确保检索结果的多样性
 
 ## 项目结构
 
@@ -170,16 +262,51 @@ Tokens: 3358 (prompt: 1721, completion: 1637)
 repomind/
 ├── repomind/
 │   ├── ingestion/          # 数据解析与预处理
+│   │   ├── chunker.py      # 多级代码分块器
+│   │   ├── summary_generator.py  # LLM 摘要生成
+│   │   └── models.py       # CodeChunk 数据模型
 │   ├── indexing/           # 嵌入与向量索引
+│   │   └── embedding_service.py
 │   ├── storage/            # 向量存储抽象
+│   │   └── faiss_store.py
 │   ├── retrieval/          # 多阶段检索 pipeline
+│   │   ├── pipeline.py     # 检索主流程
+│   │   ├── query_expander.py  # 查询扩展
+│   │   ├── query_classifier.py  # 查询分类
+│   │   └── reranker.py     # 重排序器 (中文优化)
 │   ├── generation/         # LLM 答案生成
+│   │   ├── answer_generator.py
+│   │   └── llm_service.py
 │   ├── evaluation/         # 评估指标
+│   │   ├── retrieval_metrics.py
+│   │   ├── llm_evaluator.py
+│   │   ├── llm_metrics.py
+│   │   └── result_parser.py
 │   ├── api/                # FastAPI 服务
-│   └── configs/            # 配置管理
-├── tests/                  # 测试套件
+│   │   └── main.py
+│   ├── configs/            # 配置管理
+│   │   └── settings.py
+│   ├── baselines/          # 基线系统
+│   │   ├── naive_rag.py
+│   │   ├── structured_rag.py
+│   │   ├── full_system.py
+│   │   └── full_system_fast.py
+│   └── core.py             # RepoMind 核心类
+├── test_suite/             # 测试集
+│   ├── travel_agent/
+│   │   ├── test_questions.json
+│   │   ├── test_questions.md
+│   │   └── expected_sources.json
+│   └── cuezero/
+│       ├── test_questions.json
+│       ├── test_questions.md
+│       └── expected_sources.json
 ├── scripts/                # 工具脚本
-├── 测试仓库/              # 测试用的示例仓库
+│   ├── run_baseline_comparison.py
+│   ├── analyze_baseline_results.py
+│   ├── run_full_llm_eval.py
+│   └── ...
+├── tests/                  # 测试套件
 ├── requirements.txt
 └── README.md
 ```
@@ -209,138 +336,9 @@ POST /query
 - **向量存储**: FAISS
 - **嵌入模型**: text-embedding-v4
 - **LLM (强)**: qwen3.5-plus - 用于最终答案生成
-- **LLM (快)**: qwen-flash - 用于查询扩展等低复杂度任务（为阶梯实现准备）
+- **LLM (快)**: qwen-flash - 用于查询扩展、问题分类、chunk 摘要生成、LLM 评估
 - **API 框架**: FastAPI
 - **数据模型**: Pydantic
-
-## 基线对比测试结果
-
-以下是使用 `测试仓库/` 作为测试数据的五组系统对比结果：
-
-### 系统说明
-
-| 系统 | 特点 |
-|------|------|
-| LLM-only | 无检索 |
-| Naive RAG | 文件级 chunk |
-| Structured RAG | 函数级 chunk（但无 MQE/rerank） |
-| Full System | 完整优化（qwen3.5-plus） |
-| Full System Fast | 完整优化 + 双模型策略（qwen-flash + qwen3.5-plus） |
-
-### 对比结果汇总
-
-#### 查询 1: "这个项目是做什么的？" (复杂问题)
-
-| 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
-|------|--------------|---------------|--------------------|--------------|
-| LLM-only | 22540.1 | 2212 | 1405 | 3617 |
-| Naive RAG | 20116.4 | 2394 | 1421 | 3815 |
-| Structured RAG | 26863.1 | 2126 | 1841 | 3967 |
-| Full System | 48973.5 | 2126 | 1594 | 3720 |
-| Full System Fast | 22974.9 | 2126 | 1440 | 3566 |
-
-#### 查询 2: "有哪些可用的工具函数？" (简单问题)
-
-| 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
-|------|--------------|---------------|--------------------|--------------|
-| LLM-only | 6728.2 | 2212 | 445 | 2657 |
-| Naive RAG | 17905.6 | 2394 | 1272 | 3666 |
-| Structured RAG | 19018.5 | 2321 | 1379 | 3700 |
-| Full System | 30951.3 | 2321 | 1314 | 3635 |
-| Full System Fast | 5527.6 | 2224 | 242 | 2466 |
-
-#### 查询 3: "OpenAICompatibleClient 类如何使用？" (复杂问题)
-
-| 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
-|------|--------------|---------------|--------------------|--------------|
-| LLM-only | 8847.2 | 2215 | 547 | 2762 |
-| Naive RAG | 8296.7 | 2397 | 477 | 2874 |
-| Structured RAG | 24083.7 | 1719 | 1707 | 3426 |
-| Full System | 25127.8 | 1719 | 433 | 2152 |
-| Full System Fast | 25746.0 | 1719 | 1740 | 3459 |
-
-#### 查询 4: "找到所有与天气相关的代码" (简单问题)
-
-| 系统 | Latency (ms) | Prompt Tokens | Completion Tokens | Total Tokens |
-|------|--------------|---------------|--------------------|--------------|
-| LLM-only | 8201.1 | 2213 | 564 | 2777 |
-| Naive RAG | 10150.5 | 2395 | 638 | 3033 |
-| Structured RAG | 9517.4 | 2322 | 595 | 2917 |
-| Full System | 26298.6 | 2322 | 778 | 3100 |
-| Full System Fast | 7033.5 | 2225 | 510 | 2735 |
-
-### 观察总结
-
-- **Full System Fast 优势**：简单问题延迟降低 77-84%（从 ~30s → ~5-7s），复杂问题延迟降低 53%（从 ~49s → ~23s）
-- **答案质量**：Full System Fast 的答案质量与原版 Full System 相当，都能提供精确的答案和正确的源文件引用
-- **Token Usage**：各系统差异不大，主要取决于生成的答案长度
-
-**注**：如需使用双模型策略（Fast LLM 用于查询扩展和分类），请直接使用统一的 `RepoMind` 核心接口。
-
-**完整详细报告**请查看 `baseline_results/comparison_report.md` 和 `fast_llm_test_report.md`（本地留档，不提交 git）
-
-## Full System 性能详细分析
-
-对 Full System 进行了精细的 latency 统计，以下是各环节的耗时分析：
-
-### 平均耗时 Breakdown (4 个查询平均)
-
-| 阶段 | 平均耗时 (ms) | 占比 | 说明 |
-|------|--------------|------|------|
-| Query Expansion | 22,872 | 51.0% | LLM 生成查询变体（最大开销！）|
-| Answer Generation | 21,135 | 47.1% | LLM 生成最终答案 |
-| Embedding (3x) | 816 | 1.8% | 3 个查询的 embedding |
-| Vector Search (3x) | 3 | 0.0% | FAISS 本地搜索（极快）|
-| 其他 (merge/filter/rerank/pack) | 9 | 0.0% | 可忽略不计 |
-| **Total** | **44,835** | **100%** | |
-
-### 关键发现
-
-1. **两个 LLM 调用占 98% 时间**：Query Expansion (51%) + Answer Generation (47%) 是绝对的主要开销
-2. **本地操作极快**：FAISS 搜索、reranking、context packing 等本地操作加起来不到 10ms
-3. **优化方向**：如果要降低 latency，优先考虑：
-   - 缓存查询扩展结果
-   - 使用更快的模型做查询扩展（**已准备 qwen-flash**）
-   - 或直接去掉 MQE（牺牲召回率换速度）
-
-## Fast LLM 阶梯实现（已完成！）
-
-已成功实现双模型策略，测试结果如下：
-
-### 性能对比
-
-| 指标 | 原版 Full System | Fast LLM 版本 | 改善 |
-|------|-----------------|--------------|------|
-| 简单问题总延迟 | ~32,600 ms | ~6,300 ms | **80.7% ↓** |
-| 复杂问题总延迟 | ~37,000 ms | ~24,400 ms | **34.1% ↓** |
-
-### 实现方案
-
-1. **Query Expansion** → 使用 **qwen-flash**
-   - 简化提示词，限制输出格式
-   - 降低 temperature (0.3)，提高确定性
-
-2. **Query Classification** → 使用 **qwen-flash**
-   - 简单提示词：只返回 "simple" 或 "complex"
-   - 极低 temperature (0.1)，输出稳定
-
-3. **Answer Generation** → 智能选择
-   - **简单问题**：用 **qwen-flash**
-   - **复杂问题**：用 **qwen3.5-plus**
-
-### 问题分类规则
-
-- **简单问题**：问"是什么"、"找文件"、"变量名/函数名"、"列举清单"
-- **复杂问题**：问"为什么"、"如何实现"、"业务逻辑"、"项目做什么"、"详细解释"
-
-### 新增/修改的文件
-
-- **修改**: `repomind/retrieval/query_expander.py` - 简化提示词，支持自定义模型
-- **新增**: `repomind/retrieval/query_classifier.py` - 问题分类器
-- **修改**: `repomind/generation/answer_generator.py` - 支持双 LLM Service
-- **新增**: `repomind/baselines/full_system_fast.py` - Fast LLM 版本
-- **新增**: `scripts/test_fast_llm.py` - 测试脚本
-- **修改**: `scripts/run_baseline_comparison.py` - 加入 Full System Fast 到基线测试
 
 ## 开发进度
 
@@ -353,6 +351,38 @@ POST /query
 - [x] Phase 7: 文档与提交
 - [x] Phase 8: 基线对比测试
 - [x] Phase 9: Fast LLM 阶梯实现
+- [x] Phase 10: 多级 Chunk + LLM Summary
+- [x] Phase 11: 中文 Reranker 优化 (当前!)
+
+## 重要更新记录
+
+### 2026-03-26: 中文 Reranker 优化
+
+**关键改进**:
+- 添加中文 2-gram + 3-gram 匹配
+- 添加中文无意义代词排除表
+- 调整权重：alpha=0.85 (余弦相似度), beta=0.15 (关键词分数)
+- README_zh.md 现在能正确被检索出来了
+
+**测试结果**:
+- travel_agent: 召回率 0.975, 命中率 1.000, 端到端成功率 100.0%
+- cuezero: 召回率 0.450, 命中率 1.000, 可回答率 100.0%
+
+### 2026-03-24: 多级 Chunk + LLM Summary
+
+**关键改进**:
+- 多级 chunk 架构（file / class / function / block）
+- 结构化信息提取（imports、signatures、calls 等）
+- LLM 摘要生成框架（使用 qwen-flash 模型）
+- 建库时自动生成 LLM summaries
+
+### 2026-03-23: Chunker Bug 修复
+
+**修复的 Bug**:
+- 重复的 Chunk - 类方法被提取两次的问题
+- `_is_top_level` 永远返回 True - 已添加 parent 属性设置
+- 缺少模块级上下文 - 现在支持多级 chunk
+- 纯脚本文件无法切分 - 增加了脚本块切分支持
 
 ## 许可证
 
