@@ -18,8 +18,12 @@ class Settings(BaseSettings):
     # Retrieval Configuration
     retrieval_top_k: int = 20
     retrieval_final_k: int = 5
-    rerank_alpha: float = 0.7  # Weight for embedding score
-    rerank_beta: float = 0.3   # Weight for keyword overlap
+    rerank_alpha: float = 0.85  # Weight for embedding score (increased for better accuracy)
+    rerank_beta: float = 0.15   # Weight for keyword overlap (decreased, just a bonus)
+    rerank_lambda: float = 0.75  # MMR relevance-diversity tradeoff (future use)
+    rerank_doc_bias: float = 0.05  # Minor boost for document chunks
+    rerank_min_doc_count: int = 1  # Minimum doc chunks in final selection
+    rerank_min_code_count: int = 1  # Minimum code chunks in final selection
 
     # Query Expansion Configuration
     enable_query_expansion: bool = True

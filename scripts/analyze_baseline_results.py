@@ -53,7 +53,7 @@ def load_expected_sources(test_suite_dir: Path, repo: str) -> Dict[str, List[str
     return question_sources
 
 
-def extract_sources_from_report(report_path: Path) -> Dict[int, List[str]]:
+def extract_sources_from_report(report_path: Path, target_system: str = None) -> Dict[int, List[str]]:
     """Extract retrieved sources from comparison report."""
     if not report_path.exists():
         return {}
@@ -63,6 +63,7 @@ def extract_sources_from_report(report_path: Path) -> Dict[int, List[str]]:
 
     query_sources = {}
     current_query_id = None
+    in_target_system_answer = False
     in_sources_section = False
 
     lines = content.split("\n")
@@ -71,11 +72,23 @@ def extract_sources_from_report(report_path: Path) -> Dict[int, List[str]]:
         query_match = re.match(r"### 查询 \d+ \(ID: (\d+),", line)
         if query_match:
             current_query_id = int(query_match.group(1))
+            in_target_system_answer = False
             in_sources_section = False
             continue
 
-        # Match sources section
-        if "**源文件**:" in line:
+        # Match system answer header - look for target system
+        # Skip "**源文件**:" which is not a system name
+        stripped = line.strip()
+        if target_system and stripped.startswith("**") and stripped.endswith("**:") and "源文件" not in stripped:
+            sys_name_in_report = stripped[2:-3]  # Remove "**" at start and "**:" at end
+            if sys_name_in_report == target_system:
+                in_target_system_answer = True
+            else:
+                in_target_system_answer = False
+            continue
+
+        # Match sources section - only if in target system's answer
+        if in_target_system_answer and "**源文件**:" in line:
             in_sources_section = True
             if current_query_id is not None and current_query_id not in query_sources:
                 query_sources[current_query_id] = []
@@ -97,14 +110,56 @@ def extract_sources_from_report(report_path: Path) -> Dict[int, List[str]]:
                 filename = Path(source_path).name
                 query_sources[current_query_id].append(filename)
 
-        # End of sources section
+        # End of sources section (but not target system answer - there may be more systems)
+        if in_sources_section and line.strip() == "---":
+            in_sources_section = False
+            # Don't reset in_target_system_answer here - it will be reset when next system header is encountered
+
+    # If no target_system specified, fallback to old behavior (first system)
+    if not target_system and not query_sources:
+        return _extract_sources_from_report_old_style(content)
+
+    return query_sources
+
+
+def _extract_sources_from_report_old_style(content: str) -> Dict[int, List[str]]:
+    """Old style extraction for single-system reports."""
+    query_sources = {}
+    current_query_id = None
+    in_sources_section = False
+
+    lines = content.split("\n")
+    for line in lines:
+        query_match = re.match(r"### 查询 \d+ \(ID: (\d+),", line)
+        if query_match:
+            current_query_id = int(query_match.group(1))
+            in_sources_section = False
+            continue
+
+        if "**源文件**:" in line:
+            in_sources_section = True
+            if current_query_id is not None and current_query_id not in query_sources:
+                query_sources[current_query_id] = []
+            continue
+
+        if in_sources_section and line.strip().startswith("- "):
+            source_path = line.strip()[2:].strip()
+            if "/测试仓库/" in source_path:
+                repo_part = source_path.split("/测试仓库/")[-1]
+                if repo_part.startswith("/"):
+                    repo_part = repo_part[1:]
+                query_sources[current_query_id].append(repo_part)
+            else:
+                filename = Path(source_path).name
+                query_sources[current_query_id].append(filename)
+
         if in_sources_section and line.strip() == "---":
             in_sources_section = False
 
     return query_sources
 
 
-def extract_performance_from_report(report_path: Path) -> Dict[int, Dict[str, Any]]:
+def extract_performance_from_report(report_path: Path, target_system: str = None) -> Dict[int, Dict[str, Any]]:
     """Extract latency and token metrics from comparison report."""
     if not report_path.exists():
         return {}
@@ -125,11 +180,14 @@ def extract_performance_from_report(report_path: Path) -> Dict[int, Dict[str, An
 
         # Match performance table
         if current_query_id is not None and "| 系统 | Latency (ms) |" in line:
-            # Next line should be the separator, then data line
             continue
 
-        # Match data line
-        perf_match = re.match(r"\|.*\| (\d+\.?\d*) \| (\d+) \| (\d+) \| (\d+) \|", line)
+        # Match data line - with optional target_system filter
+        if target_system:
+            perf_match = re.match(r"\| " + re.escape(target_system) + r" \| (\d+\.?\d*) \| (\d+) \| (\d+) \| (\d+) \|", line)
+        else:
+            perf_match = re.match(r"\|.*\| (\d+\.?\d*) \| (\d+) \| (\d+) \| (\d+) \|", line)
+
         if perf_match and current_query_id is not None:
             query_performance[current_query_id] = {
                 "latency_ms": float(perf_match.group(1)),
@@ -141,7 +199,7 @@ def extract_performance_from_report(report_path: Path) -> Dict[int, Dict[str, An
     return query_performance
 
 
-def extract_answers_from_report(report_path: Path) -> Dict[int, str]:
+def extract_answers_from_report(report_path: Path, target_system: str = None) -> Dict[int, str]:
     """Extract actual answers from comparison report."""
     if not report_path.exists():
         return {}
@@ -152,6 +210,7 @@ def extract_answers_from_report(report_path: Path) -> Dict[int, str]:
     query_answers = {}
     current_query_id = None
     in_answer_section = False
+    in_target_system_answer = False
     current_answer = []
 
     lines = content.split("\n")
@@ -163,6 +222,7 @@ def extract_answers_from_report(report_path: Path) -> Dict[int, str]:
                 query_answers[current_query_id] = "\n".join(current_answer).strip()
             current_query_id = int(query_match.group(1))
             in_answer_section = False
+            in_target_system_answer = False
             current_answer = []
             continue
 
@@ -172,21 +232,87 @@ def extract_answers_from_report(report_path: Path) -> Dict[int, str]:
             continue
 
         # Match system answer header
+        # Skip "**源文件**:" which is not a system name
+        stripped = line.strip()
+        if in_answer_section and stripped.startswith("**") and stripped.endswith("**:") and "源文件" not in stripped:
+            sys_name_in_report = stripped[2:-3]  # Remove "**" at start and "**:" at end
+            if target_system:
+                if sys_name_in_report == target_system:
+                    in_target_system_answer = True
+                    current_answer = []  # Reset for new answer
+                else:
+                    if in_target_system_answer:
+                        # We were collecting target system answer, now another system starts
+                        in_target_system_answer = False
+            continue
+
+        # End of answer for one system (but there may be more systems in this query)
+        if in_answer_section and line.strip() == "---":
+            if current_query_id is not None and current_answer and in_target_system_answer:
+                query_answers[current_query_id] = "\n".join(current_answer).strip()
+            # Don't reset in_answer_section here - it stays True until next query
+            in_target_system_answer = False
+            current_answer = []
+            continue
+
+        # Collect answer content - only for target system if specified
+        should_collect = in_answer_section
+        if target_system:
+            should_collect = should_collect and in_target_system_answer
+
+        # Skip reference/source file section headers
+        if should_collect and (line.strip().startswith("参考文件：") or line.strip().startswith("**源文件**:")):
+            continue
+
+        # Collect answer content if we're in the right section and line is not empty
+        if should_collect and line.strip():
+            current_answer.append(line)
+
+    # Add the last answer
+    if current_query_id is not None and current_answer:
+        query_answers[current_query_id] = "\n".join(current_answer).strip()
+
+    # If no target_system specified and no answers found, try old behavior
+    if not target_system and not query_answers:
+        return _extract_answers_from_report_old_style(content)
+
+    return query_answers
+
+
+def _extract_answers_from_report_old_style(content: str) -> Dict[int, str]:
+    """Old style extraction for single-system reports."""
+    query_answers = {}
+    current_query_id = None
+    in_answer_section = False
+    current_answer = []
+
+    lines = content.split("\n")
+    for line in lines:
+        query_match = re.match(r"### 查询 \d+ \(ID: (\d+),", line)
+        if query_match:
+            if current_query_id is not None and current_answer:
+                query_answers[current_query_id] = "\n".join(current_answer).strip()
+            current_query_id = int(query_match.group(1))
+            in_answer_section = False
+            current_answer = []
+            continue
+
+        if "#### 详细答案" in line:
+            in_answer_section = True
+            continue
+
         if in_answer_section and line.strip().startswith("**") and line.strip().endswith("**:"):
             continue
 
-        # End of answer (next query or separator)
         if in_answer_section and line.strip() == "---":
             if current_query_id is not None and current_answer:
                 query_answers[current_query_id] = "\n".join(current_answer).strip()
             in_answer_section = False
             continue
 
-        # Collect answer content
         if in_answer_section and line.strip() and not line.strip().startswith("**源文件**:") and not line.strip().startswith("参考文件："):
             current_answer.append(line)
 
-    # Add the last answer
     if current_query_id is not None and current_answer:
         query_answers[current_query_id] = "\n".join(current_answer).strip()
 
@@ -249,9 +375,34 @@ def calculate_metrics_for_system(
     test_suite_data: Dict[str, Any] = None,
 ) -> Dict[str, Any]:
     """Calculate metrics for a single system."""
-    retrieved_sources = extract_sources_from_report(report_path)
-    performance_metrics = extract_performance_from_report(report_path)
-    actual_answers = extract_answers_from_report(report_path)
+    # Map system_name to display name in report
+    system_display_names = {
+        "llm_only": "LLM-only",
+        "naive_rag": "Naive RAG",
+        "structured_rag": "Structured RAG",
+        "structured_rag_new_chunk": "Structured RAG",
+        "structured_rag_new_chunk_llm_summary": "Structured RAG",
+        "structured_rag_new_chunk_llm_summary_fixed": "Structured RAG",
+        "full_system": "Full System",
+        "full_system_new_chunk": "Full System",
+        "full_system_new_chunk_bilingual": "Full System",
+        "full_system_new_chunk_llm_summary": "Full System",
+        "full_system_new_chunk_llm_summary_fixed": "Full System",
+        "full_system_new_rerank": "Full System",
+        "full_system_chinese_rerank_fix": "Full System",
+        "full_system_fast": "Full System Fast",
+        "full_system_fast_new_chunk": "Full System Fast",
+        "full_system_fast_new_chunk_bilingual": "Full System Fast",
+        "full_system_fast_new_chunk_llm_summary": "Full System Fast",
+        "full_system_fast_new_chunk_llm_summary_fixed": "Full System Fast",
+        "full_system_fast_new_rerank": "Full System Fast",
+        "full_system_fast_chinese_rerank_fix": "Full System Fast",
+    }
+    target_system = system_display_names.get(system_name, system_name)
+
+    retrieved_sources = extract_sources_from_report(report_path, target_system)
+    performance_metrics = extract_performance_from_report(report_path, target_system)
+    actual_answers = extract_answers_from_report(report_path, target_system)
 
     # Create question lookup from test suite
     question_lookup = {}
@@ -364,16 +515,22 @@ def main():
 
     all_results = []
 
-    # Analyze travel_agent results
+    # Analyze travel_agent results (single system per directory)
     travel_systems = [
         ("llm_only", "travel_agent"),
         ("naive_rag", "travel_agent"),
         ("structured_rag", "travel_agent"),
         ("structured_rag_new_chunk", "travel_agent"),
+        ("structured_rag_new_chunk_llm_summary", "travel_agent"),
         ("full_system", "travel_agent"),
         ("full_system_fast", "travel_agent"),
         ("full_system_new_chunk", "travel_agent"),
         ("full_system_fast_new_chunk", "travel_agent"),
+        ("full_system_new_chunk_bilingual", "travel_agent"),
+        ("full_system_fast_new_chunk_bilingual", "travel_agent"),
+        ("full_system_new_chunk_llm_summary", "travel_agent"),
+        ("full_system_fast_new_chunk_llm_summary", "travel_agent"),
+        ("full_system_fast_new_rerank", "travel_agent"),
     ]
 
     for sys_name, repo in travel_systems:
@@ -387,16 +544,22 @@ def main():
             add_quality_ratings(results, quality_ratings, repo)
             all_results.append(results)
 
-    # Analyze cuezero results
+    # Analyze cuezero results (single system per directory)
     cuezero_systems = [
         ("llm_only", "cuezero"),
         ("naive_rag", "cuezero"),
         ("structured_rag", "cuezero"),
         ("structured_rag_new_chunk", "cuezero"),
+        ("structured_rag_new_chunk_llm_summary", "cuezero"),
         ("full_system", "cuezero"),
         ("full_system_fast", "cuezero"),
         ("full_system_new_chunk", "cuezero"),
         ("full_system_fast_new_chunk", "cuezero"),
+        ("full_system_new_chunk_bilingual", "cuezero"),
+        ("full_system_fast_new_chunk_bilingual", "cuezero"),
+        ("full_system_new_chunk_llm_summary", "cuezero"),
+        ("full_system_fast_new_chunk_llm_summary", "cuezero"),
+        ("full_system_fast_new_rerank", "cuezero"),
     ]
 
     for sys_name, repo in cuezero_systems:
@@ -409,6 +572,48 @@ def main():
             # Add quality ratings
             add_quality_ratings(results, quality_ratings, repo)
             all_results.append(results)
+
+    # Analyze multi-system results (new_chunk_llm_summary_fixed - 3 systems in one directory)
+    multi_system_dirs = [
+        ("travel_agent", "travel_agent_new_chunk_llm_summary_fixed", [
+            "structured_rag_new_chunk_llm_summary_fixed",
+            "full_system_new_chunk_llm_summary_fixed",
+            "full_system_fast_new_chunk_llm_summary_fixed",
+        ], travel_expected, travel_test_suite),
+        ("cuezero", "cuezero_new_chunk_llm_summary_fixed", [
+            "structured_rag_new_chunk_llm_summary_fixed",
+            "full_system_new_chunk_llm_summary_fixed",
+            "full_system_fast_new_chunk_llm_summary_fixed",
+        ], cuezero_expected, cuezero_test_suite),
+        ("travel_agent", "travel_agent_new_rerank", [
+            "full_system_new_rerank",
+            "full_system_fast_new_rerank",
+        ], travel_expected, travel_test_suite),
+        ("cuezero", "cuezero_new_rerank", [
+            "full_system_new_rerank",
+            "full_system_fast_new_rerank",
+        ], cuezero_expected, cuezero_test_suite),
+        ("travel_agent", "travel_agent_chinese_rerank_fix", [
+            "full_system_chinese_rerank_fix",
+            "full_system_fast_chinese_rerank_fix",
+        ], travel_expected, travel_test_suite),
+        ("cuezero", "cuezero_chinese_rerank_fix", [
+            "full_system_chinese_rerank_fix",
+            "full_system_fast_chinese_rerank_fix",
+        ], cuezero_expected, cuezero_test_suite),
+    ]
+
+    for repo, dir_suffix, sys_names, expected, test_suite in multi_system_dirs:
+        report_path = results_archive / f"baseline_results_{dir_suffix}" / "comparison_report.md"
+        if report_path.exists():
+            for sys_name in sys_names:
+                print(f"Analyzing {repo} - {sys_name}...")
+                results = calculate_metrics_for_system(
+                    sys_name, repo, report_path, expected, test_suite
+                )
+                # Add quality ratings
+                add_quality_ratings(results, quality_ratings, repo)
+                all_results.append(results)
 
     # Generate summary report
     output_path = repo_root / "baseline_metrics_summary.md"

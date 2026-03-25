@@ -64,6 +64,20 @@ optimization_notes.md
 
 # Baseline results (not for git)
 baseline_results/
+baseline_results_archive/
+baseline_results_*/
+llm_evaluation_results/
+code_chunk_logs/
+summary_generator_logs/
+retrieval_debug_output/
+retrieval_debug_output_fixed/
+cuezero_test_logs/
+*.backup
+*.backup_before_fix
+evaluation_plan_analysis.md
+new_chunk_llm_summary_test_results_summary.md
+new_chunk_metrics_analysis.md
+baseline_test_summary.md
 
 
 

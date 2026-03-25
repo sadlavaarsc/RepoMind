@@ -14,6 +14,16 @@
 | full_system_fast | 0.975 | 1.000 | 0.642 | 0.907 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 15157.2 | 2502 |
 | full_system_new_chunk | 0.975 | 1.000 | 0.642 | 0.930 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 38786.0 | 2745 |
 | full_system_fast_new_chunk | 0.975 | 1.000 | 0.642 | 0.930 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 13730.5 | 2484 |
+| full_system_new_chunk_bilingual | 0.975 | 1.000 | 0.642 | 0.953 | 90.0% | 90.0% | 1.90 | 2.00 | 2.00 | -0.10 | 52035.1 | 2738 |
+| full_system_fast_new_chunk_bilingual | 0.975 | 1.000 | 0.642 | 0.930 | 90.0% | 90.0% | 1.90 | 2.00 | 2.00 | -0.10 | 15120.7 | 2527 |
+| full_system_fast_new_rerank | 0.875 | 1.000 | 0.475 | 0.918 | 80.0% | 100.0% | 1.80 | 2.00 | 2.00 | -0.20 | 61584.3 | 2742 |
+| structured_rag_new_chunk_llm_summary_fixed | 1.000 | 1.000 | 0.585 | 0.953 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 17476.1 | 3416 |
+| full_system_new_chunk_llm_summary_fixed | 1.000 | 1.000 | 0.480 | 0.953 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 51349.4 | 4162 |
+| full_system_fast_new_chunk_llm_summary_fixed | 1.000 | 1.000 | 0.480 | 0.953 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 12842.7 | 3995 |
+| full_system_new_rerank | 0.875 | 1.000 | 0.480 | 0.848 | 80.0% | 100.0% | 1.80 | 2.00 | 2.00 | -0.20 | 100296.6 | 3096 |
+| full_system_fast_new_rerank | 0.875 | 1.000 | 0.465 | 0.848 | 80.0% | 100.0% | 1.80 | 2.00 | 2.00 | -0.20 | 58530.0 | 2678 |
+| full_system_chinese_rerank_fix | 0.975 | 1.000 | 0.485 | 0.918 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 94292.8 | 3307 |
+| full_system_fast_chinese_rerank_fix | 0.975 | 1.000 | 0.490 | 0.953 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 65952.5 | 3170 |
 
 ### 详细查询指标
 
@@ -225,6 +235,266 @@
 - 总 Token: 24839
 - 平均答案质量: 0.930
 
+#### full_system_new_chunk_bilingual
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 39830.2 | 1683 | 1558 | 3241 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 35388.7 | 2188 | 1064 | 3252 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 66724.5 | 2191 | 1253 | 3444 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 51591.4 | 1665 | 273 | 1938 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 1.000 | 1.000 | 0.333 | 1.000 | 1.000 | 31168.5 | 1695 | 494 | 2189 | 1 | 3 | Excellent - covers all key entities and provides detailed explanation |
+| 6 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 69833.5 | 1546 | 1679 | 3225 | 2 | 2 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.333 | 1.000 | 1.000 | 65909.7 | 1745 | 675 | 2420 | 1 | 3 | Excellent - covers all key entities and provides detailed explanation |
+| 8 | 0.750 | 1.000 | 1.000 | 1.000 | 1.000 | 78251.9 | 1696 | 760 | 2456 | 4 | 3 | Excellent - covers all key entities and provides detailed explanation |
+| 9 | 1.000 | 1.000 | 0.500 | 1.000 | 1.000 | 44401.4 | 2064 | 418 | 2482 | 2 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 10 | 1.000 | 1.000 | 1.000 | 0.533 | 0.333 | 37251.2 | 1687 | 1042 | 2729 | 4 | 4 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 52035.1ms
+- 总延迟: 520351.0ms
+- 平均 Prompt Token: 1816
+- 总 Prompt Token: 18160
+- 平均 Completion Token: 922
+- 总 Completion Token: 9216
+- 平均总 Token: 2738
+- 总 Token: 27376
+- 平均答案质量: 0.953
+
+#### full_system_fast_new_chunk_bilingual
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 35458.8 | 1683 | 1928 | 3611 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 7710.9 | 2101 | 250 | 2351 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 3950.0 | 2103 | 120 | 2223 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 3573.0 | 1584 | 90 | 1674 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 1.000 | 1.000 | 0.333 | 1.000 | 1.000 | 12015.1 | 1695 | 550 | 2245 | 1 | 3 | Excellent - covers all key entities and provides detailed explanation |
+| 6 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 24697.4 | 1546 | 1379 | 2925 | 2 | 2 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.333 | 0.767 | 0.667 | 14220.5 | 1745 | 711 | 2456 | 1 | 3 | Good - covers most key entities |
+| 8 | 0.750 | 1.000 | 1.000 | 1.000 | 1.000 | 14486.2 | 1696 | 692 | 2388 | 4 | 3 | Excellent - covers all key entities and provides detailed explanation |
+| 9 | 1.000 | 1.000 | 0.500 | 1.000 | 1.000 | 11068.5 | 2064 | 483 | 2547 | 2 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 10 | 1.000 | 1.000 | 1.000 | 0.533 | 0.333 | 24026.3 | 1687 | 1159 | 2846 | 4 | 4 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 15120.7ms
+- 总延迟: 151206.7ms
+- 平均 Prompt Token: 1790
+- 总 Prompt Token: 17904
+- 平均 Completion Token: 736
+- 总 Completion Token: 7362
+- 平均总 Token: 2527
+- 总 Token: 25266
+- 平均答案质量: 0.930
+
+#### full_system_fast_new_rerank
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.750 | 1.000 | 0.750 | 1.000 | 1.000 | 78082.1 | 1902 | 1720 | 3622 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 0.750 | 1.000 | 0.750 | 1.000 | 1.000 | 45139.5 | 1876 | 323 | 2199 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 48629.7 | 2499 | 118 | 2617 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 60322.3 | 764 | 93 | 857 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 75503.1 | 1967 | 596 | 2563 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 6 | 1.000 | 1.000 | 0.500 | 1.000 | 1.000 | 34763.7 | 2292 | 513 | 2805 | 2 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.250 | 0.767 | 0.667 | 62106.0 | 2352 | 565 | 2917 | 1 | 4 | Good - covers most key entities |
+| 8 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 76727.3 | 2661 | 1254 | 3915 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 9 | 0.500 | 1.000 | 0.250 | 0.650 | 0.500 | 56132.9 | 1970 | 441 | 2411 | 2 | 4 | Fair - covers some key entities but missing important details |
+| 10 | 0.750 | 1.000 | 0.750 | 0.767 | 0.667 | 78436.2 | 2294 | 1219 | 3513 | 4 | 4 | Good - covers most key entities |
+
+**性能汇总**:
+- 平均延迟: 61584.3ms
+- 总延迟: 615842.8ms
+- 平均 Prompt Token: 2058
+- 总 Prompt Token: 20577
+- 平均 Completion Token: 684
+- 总 Completion Token: 6842
+- 平均总 Token: 2742
+- 总 Token: 27419
+- 平均答案质量: 0.918
+
+#### structured_rag_new_chunk_llm_summary_fixed
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 25638.3 | 2604 | 1625 | 4229 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 27165.3 | 2556 | 1847 | 4403 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 31181.9 | 2559 | 1768 | 4327 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 5883.7 | 2050 | 310 | 2360 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 11708.7 | 2362 | 563 | 2925 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 6 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 11050.9 | 1996 | 599 | 2595 | 2 | 2 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 9787.3 | 2305 | 514 | 2819 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 8 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 15931.3 | 2609 | 825 | 3434 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 9 | 1.000 | 1.000 | 0.500 | 1.000 | 1.000 | 12978.2 | 2563 | 687 | 3250 | 2 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 10 | 1.000 | 1.000 | 0.800 | 0.533 | 0.333 | 23435.1 | 2608 | 1205 | 3813 | 4 | 5 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 17476.1ms
+- 总延迟: 174760.7ms
+- 平均 Prompt Token: 2421
+- 总 Prompt Token: 24212
+- 平均 Completion Token: 994
+- 总 Completion Token: 9943
+- 平均总 Token: 3416
+- 总 Token: 34155
+- 平均答案质量: 0.953
+
+#### full_system_new_chunk_llm_summary_fixed
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 59830.1 | 3463 | 645 | 4108 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 33478.4 | 3463 | 472 | 3935 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 89487.6 | 3466 | 997 | 4463 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 45398.6 | 3463 | 273 | 3736 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 32400.8 | 3467 | 714 | 4181 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 6 | 1.000 | 1.000 | 0.400 | 1.000 | 1.000 | 53992.4 | 3465 | 512 | 3977 | 2 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.200 | 0.767 | 0.667 | 54243.4 | 3464 | 593 | 4057 | 1 | 5 | Good - covers most key entities |
+| 8 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 39893.5 | 3468 | 780 | 4248 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 9 | 1.000 | 1.000 | 0.400 | 1.000 | 1.000 | 55880.8 | 3470 | 647 | 4117 | 2 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 10 | 1.000 | 1.000 | 0.800 | 0.767 | 0.667 | 48888.1 | 3467 | 1330 | 4797 | 4 | 5 | Good - covers most key entities |
+
+**性能汇总**:
+- 平均延迟: 51349.4ms
+- 总延迟: 513493.7ms
+- 平均 Prompt Token: 3466
+- 总 Prompt Token: 34656
+- 平均 Completion Token: 696
+- 总 Completion Token: 6963
+- 平均总 Token: 4162
+- 总 Token: 41619
+- 平均答案质量: 0.953
+
+#### full_system_fast_new_chunk_llm_summary_fixed
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 15135.2 | 3470 | 686 | 4156 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 5293.7 | 3337 | 211 | 3548 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 4570.3 | 3339 | 134 | 3473 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 3684.9 | 3336 | 90 | 3426 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 15563.7 | 3474 | 709 | 4183 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 6 | 1.000 | 1.000 | 0.400 | 1.000 | 1.000 | 11809.4 | 3472 | 487 | 3959 | 2 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.200 | 0.767 | 0.667 | 12782.4 | 3471 | 603 | 4074 | 1 | 5 | Good - covers most key entities |
+| 8 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 21636.5 | 3475 | 974 | 4449 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 9 | 1.000 | 1.000 | 0.400 | 1.000 | 1.000 | 14087.6 | 3477 | 652 | 4129 | 2 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 10 | 1.000 | 1.000 | 0.800 | 0.767 | 0.667 | 23862.8 | 3474 | 1082 | 4556 | 4 | 5 | Good - covers most key entities |
+
+**性能汇总**:
+- 平均延迟: 12842.7ms
+- 总延迟: 128426.5ms
+- 平均 Prompt Token: 3432
+- 总 Prompt Token: 34325
+- 平均 Completion Token: 563
+- 总 Completion Token: 5628
+- 平均总 Token: 3995
+- 总 Token: 39953
+- 平均答案质量: 0.953
+
+#### full_system_new_rerank
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.750 | 1.000 | 0.750 | 1.000 | 1.000 | 118371.1 | 1921 | 1908 | 3829 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 0.750 | 1.000 | 0.750 | 1.000 | 1.000 | 106719.7 | 1921 | 1273 | 3194 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 86203.2 | 2480 | 937 | 3417 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 103161.3 | 1208 | 1492 | 2700 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 1.000 | 1.000 | 0.250 | 0.300 | 0.000 | 82510.8 | 1643 | 561 | 2204 | 1 | 4 | Poor - missing most key entities or incomplete answer |
+| 6 | 1.000 | 1.000 | 0.500 | 1.000 | 1.000 | 61796.9 | 2315 | 492 | 2807 | 2 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.250 | 0.767 | 0.667 | 118291.1 | 2363 | 571 | 2934 | 1 | 4 | Good - covers most key entities |
+| 8 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 125526.5 | 2683 | 1087 | 3770 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 9 | 0.500 | 1.000 | 0.250 | 0.650 | 0.500 | 111501.6 | 1977 | 613 | 2590 | 2 | 4 | Fair - covers some key entities but missing important details |
+| 10 | 0.750 | 1.000 | 0.750 | 0.767 | 0.667 | 88884.3 | 2317 | 1195 | 3512 | 4 | 4 | Good - covers most key entities |
+
+**性能汇总**:
+- 平均延迟: 100296.6ms
+- 总延迟: 1002966.5ms
+- 平均 Prompt Token: 2083
+- 总 Prompt Token: 20828
+- 平均 Completion Token: 1013
+- 总 Completion Token: 10129
+- 平均总 Token: 3096
+- 总 Token: 30957
+- 平均答案质量: 0.848
+
+#### full_system_fast_new_rerank
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.750 | 1.000 | 0.750 | 1.000 | 1.000 | 76366.8 | 1925 | 1505 | 3430 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 0.750 | 1.000 | 0.750 | 1.000 | 1.000 | 41902.0 | 1838 | 191 | 2029 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 52906.6 | 2520 | 99 | 2619 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 1.000 | 1.000 | 0.250 | 0.300 | 0.000 | 41162.7 | 1164 | 55 | 1219 | 1 | 4 | Poor - missing most key entities or incomplete answer |
+| 5 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 68381.3 | 1660 | 632 | 2292 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 6 | 1.000 | 1.000 | 0.400 | 1.000 | 1.000 | 45365.7 | 2618 | 527 | 3145 | 2 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.250 | 0.767 | 0.667 | 46304.0 | 1986 | 632 | 2618 | 1 | 4 | Good - covers most key entities |
+| 8 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 80744.7 | 2681 | 730 | 3411 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 9 | 0.500 | 1.000 | 0.250 | 0.650 | 0.500 | 57474.9 | 1992 | 579 | 2571 | 2 | 4 | Fair - covers some key entities but missing important details |
+| 10 | 0.750 | 1.000 | 0.750 | 0.767 | 0.667 | 74691.1 | 2308 | 1133 | 3441 | 4 | 4 | Good - covers most key entities |
+
+**性能汇总**:
+- 平均延迟: 58530.0ms
+- 总延迟: 585299.8ms
+- 平均 Prompt Token: 2069
+- 总 Prompt Token: 20692
+- 平均 Completion Token: 608
+- 总 Completion Token: 6083
+- 平均总 Token: 2678
+- 总 Token: 26775
+- 平均答案质量: 0.848
+
+#### full_system_chinese_rerank_fix
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.750 | 1.000 | 0.750 | 1.000 | 1.000 | 104475.0 | 1933 | 1538 | 3471 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 93287.1 | 2634 | 513 | 3147 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.200 | 0.650 | 0.500 | 104846.6 | 2792 | 284 | 3076 | 1 | 5 | Fair - covers some key entities but missing important details |
+| 4 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 72227.2 | 2405 | 304 | 2709 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 115641.1 | 2793 | 669 | 3462 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 6 | 1.000 | 1.000 | 0.500 | 1.000 | 1.000 | 78357.7 | 2319 | 437 | 2756 | 2 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.200 | 0.767 | 0.667 | 85433.5 | 2790 | 647 | 3437 | 1 | 5 | Good - covers most key entities |
+| 8 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 102825.4 | 2794 | 952 | 3746 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 9 | 1.000 | 1.000 | 0.400 | 1.000 | 1.000 | 85750.3 | 2641 | 617 | 3258 | 2 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 10 | 1.000 | 1.000 | 0.800 | 0.767 | 0.667 | 100084.5 | 2638 | 1371 | 4009 | 4 | 5 | Good - covers most key entities |
+
+**性能汇总**:
+- 平均延迟: 94292.8ms
+- 总延迟: 942928.4ms
+- 平均 Prompt Token: 2574
+- 总 Prompt Token: 25739
+- 平均 Completion Token: 733
+- 总 Completion Token: 7332
+- 平均总 Token: 3307
+- 总 Token: 33071
+- 平均答案质量: 0.918
+
+#### full_system_fast_chinese_rerank_fix
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.750 | 1.000 | 0.750 | 1.000 | 1.000 | 58429.4 | 1913 | 1449 | 3362 | 4 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 2 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 149648.0 | 2518 | 263 | 2781 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 3 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 38287.3 | 2670 | 112 | 2782 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 1.000 | 1.000 | 0.250 | 1.000 | 1.000 | 45852.2 | 1874 | 92 | 1966 | 1 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 1.000 | 1.000 | 0.200 | 1.000 | 1.000 | 65426.4 | 2778 | 580 | 3358 | 1 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 6 | 1.000 | 1.000 | 0.500 | 1.000 | 1.000 | 33986.9 | 2304 | 464 | 2768 | 2 | 4 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.200 | 0.767 | 0.667 | 62766.9 | 2775 | 667 | 3442 | 1 | 5 | Good - covers most key entities |
+| 8 | 1.000 | 1.000 | 0.800 | 1.000 | 1.000 | 73203.6 | 2779 | 1419 | 4198 | 4 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 9 | 1.000 | 1.000 | 0.400 | 1.000 | 1.000 | 59322.9 | 2623 | 600 | 3223 | 2 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 10 | 1.000 | 1.000 | 0.800 | 0.767 | 0.667 | 72601.2 | 2620 | 1203 | 3823 | 4 | 5 | Good - covers most key entities |
+
+**性能汇总**:
+- 平均延迟: 65952.5ms
+- 总延迟: 659524.8ms
+- 平均 Prompt Token: 2485
+- 总 Prompt Token: 24854
+- 平均 Completion Token: 685
+- 总 Completion Token: 6849
+- 平均总 Token: 3170
+- 总 Token: 31703
+- 平均答案质量: 0.953
+
 ## cuezero 项目
 
 | 系统 | 平均召回率 | 平均命中率 | 平均精确率 | 平均答案质量 | 可回答率 | 端到端成功率 | 平均充分性 | 平均正确性 | 平均事实性 | 检索差距 | 平均延迟(ms) | 平均总Token |
@@ -237,6 +507,18 @@
 | full_system_fast | 0.558 | 0.900 | 0.337 | 0.469 | 60.0% | 80.0% | 1.50 | 1.80 | 2.00 | -0.30 | 14342.8 | 1634 |
 | full_system_new_chunk | 0.558 | 0.900 | 0.378 | 0.527 | 70.0% | 80.0% | 1.60 | 1.80 | 2.00 | -0.20 | 42752.6 | 2340 |
 | full_system_fast_new_chunk | 0.558 | 0.900 | 0.337 | 0.469 | 80.0% | 70.0% | 1.70 | 1.60 | 2.00 | 0.10 | 14732.1 | 1729 |
+| full_system_new_chunk_bilingual | 0.508 | 0.900 | 0.358 | 0.557 | 70.0% | 70.0% | 1.70 | 1.80 | 1.90 | -0.10 | 63561.8 | 2872 |
+| full_system_fast_new_chunk_bilingual | 0.483 | 0.900 | 0.338 | 0.492 | 60.0% | 60.0% | 1.50 | 1.70 | 2.00 | -0.20 | 15065.8 | 2248 |
+| full_system_new_chunk_llm_summary | 0.558 | 1.000 | 0.530 | 0.557 | 60.0% | 40.0% | 1.50 | 1.20 | 1.80 | 0.30 | 77063.3 | 2755 |
+| full_system_fast_new_chunk_llm_summary | 0.558 | 1.000 | 0.533 | 0.551 | 60.0% | 40.0% | 1.50 | 1.10 | 1.80 | 0.40 | 18541.7 | 2169 |
+| full_system_fast_new_rerank | 0.433 | 1.000 | 0.230 | 0.498 | 80.0% | 60.0% | 1.70 | 1.50 | 2.00 | 0.20 | 207083.7 | 2371 |
+| structured_rag_new_chunk_llm_summary_fixed | 0.483 | 0.900 | 0.462 | 0.539 | 60.0% | 40.0% | 1.50 | 1.70 | 1.40 | -0.20 | 26146.8 | 2952 |
+| full_system_new_chunk_llm_summary_fixed | 0.650 | 1.000 | 0.383 | 0.644 | 60.0% | 50.0% | 1.50 | 1.80 | 1.50 | -0.30 | 59577.3 | 3945 |
+| full_system_fast_new_chunk_llm_summary_fixed | 0.650 | 1.000 | 0.424 | 0.615 | 60.0% | 60.0% | 1.50 | 1.60 | 1.40 | -0.10 | 12379.7 | 3751 |
+| full_system_new_rerank | 0.433 | 1.000 | 0.225 | 0.545 | 80.0% | 70.0% | 1.70 | 1.80 | 1.90 | -0.10 | 233201.2 | 3005 |
+| full_system_fast_new_rerank | 0.483 | 1.000 | 0.240 | 0.457 | 80.0% | 60.0% | 1.70 | 1.50 | 2.00 | 0.20 | 189829.1 | 2387 |
+| full_system_chinese_rerank_fix | 0.450 | 1.000 | 0.225 | 0.504 | 100.0% | 80.0% | 2.00 | 1.90 | 1.90 | 0.10 | 223784.0 | 2777 |
+| full_system_fast_chinese_rerank_fix | 0.450 | 1.000 | 0.225 | 0.504 | 100.0% | 90.0% | 2.00 | 1.80 | 2.00 | 0.20 | 183836.5 | 2354 |
 
 ### 详细查询指标
 
@@ -448,6 +730,318 @@
 - 总 Token: 17290
 - 平均答案质量: 0.469
 
+#### full_system_new_chunk_bilingual
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.500 | 1.000 | 0.200 | 0.533 | 0.333 | 58733.9 | 643 | 1707 | 2350 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 1.000 | 1.000 | 0.750 | 0.767 | 0.667 | 73571.2 | 847 | 1269 | 2116 | 3 | 4 | Good - covers most key entities |
+| 3 | 0.500 | 1.000 | 0.200 | 0.475 | 0.250 | 51696.7 | 1064 | 1646 | 2710 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.500 | 0.650 | 0.500 | 82652.7 | 3198 | 1288 | 4486 | 2 | 2 | Fair - covers some key entities but missing important details |
+| 5 | 0.000 | 0.000 | 0.000 | 0.300 | 0.000 | 68249.2 | 1099 | 1651 | 2750 | 3 | 3 | Poor - missing most key entities or incomplete answer |
+| 6 | 0.500 | 1.000 | 0.333 | 1.000 | 1.000 | 64566.7 | 1166 | 1491 | 2657 | 2 | 3 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.500 | 0.300 | 0.000 | 70670.5 | 2747 | 692 | 3439 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 0.500 | 0.533 | 0.333 | 38446.5 | 3122 | 1036 | 4158 | 3 | 2 | Fair - covers some key entities but missing important details |
+| 9 | 0.500 | 1.000 | 0.400 | 0.475 | 0.250 | 57464.1 | 765 | 583 | 1348 | 4 | 5 | Poor - missing most key entities or incomplete answer |
+| 10 | 0.250 | 1.000 | 0.200 | 0.533 | 0.333 | 69566.6 | 953 | 1756 | 2709 | 4 | 5 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 63561.8ms
+- 总延迟: 635618.1ms
+- 平均 Prompt Token: 1560
+- 总 Prompt Token: 15604
+- 平均 Completion Token: 1312
+- 总 Completion Token: 13119
+- 平均总 Token: 2872
+- 总 Token: 28723
+- 平均答案质量: 0.557
+
+#### full_system_fast_new_chunk_bilingual
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.500 | 1.000 | 0.200 | 0.533 | 0.333 | 7525.5 | 632 | 391 | 1023 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 1.000 | 1.000 | 0.750 | 0.533 | 0.333 | 3850.5 | 617 | 90 | 707 | 3 | 4 | Fair - covers some key entities but missing important details |
+| 3 | 0.500 | 1.000 | 0.200 | 0.475 | 0.250 | 6606.9 | 745 | 439 | 1184 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.500 | 0.650 | 0.500 | 5431.8 | 3040 | 172 | 3212 | 2 | 2 | Fair - covers some key entities but missing important details |
+| 5 | 0.000 | 0.000 | 0.000 | 0.300 | 0.000 | 5541.7 | 760 | 222 | 982 | 3 | 3 | Poor - missing most key entities or incomplete answer |
+| 6 | 0.500 | 1.000 | 0.333 | 1.000 | 1.000 | 31365.9 | 1166 | 1821 | 2987 | 2 | 3 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.500 | 0.300 | 0.000 | 11215.6 | 2747 | 523 | 3270 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 0.500 | 0.533 | 0.333 | 19248.0 | 3122 | 974 | 4096 | 3 | 2 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.200 | 0.300 | 0.000 | 26854.8 | 739 | 1473 | 2212 | 4 | 5 | Poor - missing most key entities or incomplete answer |
+| 10 | 0.250 | 1.000 | 0.200 | 0.300 | 0.000 | 33017.5 | 953 | 1851 | 2804 | 4 | 5 | Poor - missing most key entities or incomplete answer |
+
+**性能汇总**:
+- 平均延迟: 15065.8ms
+- 总延迟: 150658.2ms
+- 平均 Prompt Token: 1452
+- 总 Prompt Token: 14521
+- 平均 Completion Token: 796
+- 总 Completion Token: 7956
+- 平均总 Token: 2248
+- 总 Token: 22477
+- 平均答案质量: 0.492
+
+#### full_system_new_chunk_llm_summary
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 0.400 | 0.533 | 0.333 | 83490.8 | 834 | 1183 | 2017 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 0.667 | 1.000 | 0.667 | 0.533 | 0.333 | 107200.0 | 867 | 2655 | 3522 | 3 | 3 | Fair - covers some key entities but missing important details |
+| 3 | 0.500 | 1.000 | 0.250 | 0.475 | 0.250 | 63029.3 | 687 | 1799 | 2486 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.500 | 0.650 | 0.500 | 109789.6 | 2422 | 1545 | 3967 | 2 | 2 | Fair - covers some key entities but missing important details |
+| 5 | 0.333 | 1.000 | 0.250 | 0.533 | 0.333 | 65066.5 | 1105 | 1531 | 2636 | 3 | 4 | Fair - covers some key entities but missing important details |
+| 6 | 0.500 | 1.000 | 1.000 | 1.000 | 1.000 | 112578.5 | 917 | 1308 | 2225 | 2 | 1 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.500 | 0.300 | 0.000 | 41983.3 | 2747 | 474 | 3221 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 1.000 | 0.533 | 0.333 | 52378.1 | 2340 | 685 | 3025 | 3 | 1 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.333 | 0.475 | 0.250 | 78265.4 | 619 | 1393 | 2012 | 4 | 3 | Poor - missing most key entities or incomplete answer |
+| 10 | 0.500 | 1.000 | 0.400 | 0.533 | 0.333 | 56851.4 | 760 | 1683 | 2443 | 4 | 5 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 77063.3ms
+- 总延迟: 770632.9ms
+- 平均 Prompt Token: 1330
+- 总 Prompt Token: 13298
+- 平均 Completion Token: 1426
+- 总 Completion Token: 14256
+- 平均总 Token: 2755
+- 总 Token: 27554
+- 平均答案质量: 0.557
+
+#### full_system_fast_new_chunk_llm_summary
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 0.400 | 0.533 | 0.333 | 7168.5 | 783 | 361 | 1144 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 0.667 | 1.000 | 0.667 | 0.300 | 0.000 | 6161.5 | 841 | 202 | 1043 | 3 | 3 | Poor - missing most key entities or incomplete answer |
+| 3 | 0.500 | 1.000 | 0.333 | 0.650 | 0.500 | 12937.6 | 633 | 866 | 1499 | 2 | 3 | Fair - covers some key entities but missing important details |
+| 4 | 0.500 | 1.000 | 0.500 | 0.650 | 0.500 | 6079.8 | 2305 | 201 | 2506 | 2 | 2 | Fair - covers some key entities but missing important details |
+| 5 | 0.333 | 1.000 | 0.200 | 0.533 | 0.333 | 7002.2 | 980 | 308 | 1288 | 3 | 5 | Fair - covers some key entities but missing important details |
+| 6 | 0.500 | 1.000 | 1.000 | 1.000 | 1.000 | 48489.6 | 917 | 2176 | 3093 | 2 | 1 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.500 | 0.300 | 0.000 | 11663.0 | 2747 | 454 | 3201 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 1.000 | 0.533 | 0.333 | 19292.8 | 2340 | 851 | 3191 | 3 | 1 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.333 | 0.475 | 0.250 | 34781.1 | 579 | 1630 | 2209 | 4 | 3 | Poor - missing most key entities or incomplete answer |
+| 10 | 0.500 | 1.000 | 0.400 | 0.533 | 0.333 | 31841.1 | 760 | 1756 | 2516 | 4 | 5 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 18541.7ms
+- 总延迟: 185417.2ms
+- 平均 Prompt Token: 1288
+- 总 Prompt Token: 12885
+- 平均 Completion Token: 880
+- 总 Completion Token: 8805
+- 平均总 Token: 2169
+- 总 Token: 21690
+- 平均答案质量: 0.551
+
+#### full_system_fast_new_rerank
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.500 | 1.000 | 0.200 | 0.533 | 0.333 | 70962.9 | 711 | 315 | 1026 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 0.667 | 1.000 | 0.400 | 0.533 | 0.333 | 215751.2 | 1385 | 164 | 1549 | 3 | 5 | Fair - covers some key entities but missing important details |
+| 3 | 0.500 | 1.000 | 0.200 | 0.300 | 0.000 | 247985.4 | 1068 | 82 | 1150 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.200 | 1.000 | 1.000 | 157084.6 | 2688 | 218 | 2906 | 2 | 5 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 0.333 | 1.000 | 0.200 | 0.300 | 0.000 | 293198.3 | 1706 | 284 | 1990 | 3 | 5 | Poor - missing most key entities or incomplete answer |
+| 6 | 0.500 | 1.000 | 0.250 | 0.475 | 0.250 | 201197.1 | 1546 | 1791 | 3337 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 7 | 0.500 | 1.000 | 0.250 | 0.300 | 0.000 | 302977.9 | 1875 | 413 | 2288 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 0.200 | 0.533 | 0.333 | 144065.7 | 2181 | 853 | 3034 | 3 | 5 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.200 | 0.475 | 0.250 | 301415.1 | 881 | 2256 | 3137 | 4 | 5 | Poor - missing most key entities or incomplete answer |
+| 10 | 0.250 | 1.000 | 0.200 | 0.533 | 0.333 | 136198.7 | 1134 | 2159 | 3293 | 4 | 5 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 207083.7ms
+- 总延迟: 2070836.9ms
+- 平均 Prompt Token: 1518
+- 总 Prompt Token: 15175
+- 平均 Completion Token: 854
+- 总 Completion Token: 8535
+- 平均总 Token: 2371
+- 总 Token: 23710
+- 平均答案质量: 0.498
+
+#### structured_rag_new_chunk_llm_summary_fixed
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 1.000 | 0.533 | 0.333 | 23460.4 | 1434 | 1297 | 2731 | 2 | 2 | Fair - covers some key entities but missing important details |
+| 2 | 0.667 | 1.000 | 0.667 | 0.533 | 0.333 | 33114.3 | 932 | 1929 | 2861 | 3 | 3 | Fair - covers some key entities but missing important details |
+| 3 | 0.000 | 0.000 | 0.000 | 0.300 | 0.000 | 17936.5 | 1448 | 1065 | 2513 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.200 | 0.650 | 0.500 | 20381.9 | 1147 | 1188 | 2335 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 5 | 0.333 | 1.000 | 0.250 | 0.533 | 0.333 | 35527.7 | 1380 | 2181 | 3561 | 3 | 4 | Fair - covers some key entities but missing important details |
+| 6 | 0.500 | 1.000 | 1.000 | 1.000 | 1.000 | 26371.5 | 1334 | 1671 | 3005 | 2 | 1 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.500 | 0.300 | 0.000 | 9772.5 | 3293 | 502 | 3795 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 0.333 | 0.533 | 0.333 | 37765.2 | 1299 | 2127 | 3426 | 3 | 3 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.333 | 0.475 | 0.250 | 29078.7 | 864 | 1646 | 2510 | 4 | 3 | Poor - missing most key entities or incomplete answer |
+| 10 | 0.250 | 1.000 | 0.333 | 0.533 | 0.333 | 28058.8 | 1053 | 1728 | 2781 | 4 | 3 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 26146.8ms
+- 总延迟: 261467.5ms
+- 平均 Prompt Token: 1418
+- 总 Prompt Token: 14184
+- 平均 Completion Token: 1533
+- 总 Completion Token: 15334
+- 平均总 Token: 2952
+- 总 Token: 29518
+- 平均答案质量: 0.539
+
+#### full_system_new_chunk_llm_summary_fixed
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 0.200 | 0.533 | 0.333 | 44178.8 | 2275 | 601 | 2876 | 2 | 10 | Fair - covers some key entities but missing important details |
+| 2 | 1.000 | 1.000 | 0.500 | 0.533 | 0.333 | 62310.1 | 2509 | 1409 | 3918 | 3 | 6 | Fair - covers some key entities but missing important details |
+| 3 | 0.500 | 1.000 | 0.143 | 1.000 | 1.000 | 80233.9 | 2491 | 1046 | 3537 | 2 | 7 | Excellent - covers all key entities and provides detailed explanation |
+| 4 | 0.500 | 1.000 | 0.500 | 1.000 | 1.000 | 98292.1 | 4966 | 515 | 5481 | 2 | 2 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 0.667 | 1.000 | 0.333 | 0.300 | 0.000 | 43857.0 | 2650 | 595 | 3245 | 3 | 6 | Poor - missing most key entities or incomplete answer |
+| 6 | 0.500 | 1.000 | 0.500 | 1.000 | 1.000 | 45049.8 | 2487 | 765 | 3252 | 2 | 2 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.500 | 0.300 | 0.000 | 35531.7 | 4724 | 680 | 5404 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 0.500 | 0.533 | 0.333 | 75627.6 | 4983 | 883 | 5866 | 3 | 2 | Fair - covers some key entities but missing important details |
+| 9 | 0.500 | 1.000 | 0.400 | 0.475 | 0.250 | 48625.8 | 1721 | 886 | 2607 | 4 | 5 | Poor - missing most key entities or incomplete answer |
+| 10 | 0.500 | 1.000 | 0.250 | 0.767 | 0.667 | 62066.0 | 2201 | 1067 | 3268 | 4 | 8 | Good - covers most key entities |
+
+**性能汇总**:
+- 平均延迟: 59577.3ms
+- 总延迟: 595772.8ms
+- 平均 Prompt Token: 3101
+- 总 Prompt Token: 31007
+- 平均 Completion Token: 845
+- 总 Completion Token: 8447
+- 平均总 Token: 3945
+- 总 Token: 39454
+- 平均答案质量: 0.644
+
+#### full_system_fast_new_chunk_llm_summary_fixed
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 0.200 | 0.533 | 0.333 | 6620.4 | 2167 | 428 | 2595 | 2 | 10 | Fair - covers some key entities but missing important details |
+| 2 | 1.000 | 1.000 | 0.600 | 0.767 | 0.667 | 5733.2 | 2320 | 185 | 2505 | 3 | 5 | Good - covers most key entities |
+| 3 | 0.500 | 1.000 | 0.250 | 0.475 | 0.250 | 10926.0 | 2076 | 749 | 2825 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.500 | 1.000 | 1.000 | 5754.6 | 4825 | 240 | 5065 | 2 | 2 | Excellent - covers all key entities and provides detailed explanation |
+| 5 | 0.667 | 1.000 | 0.333 | 0.300 | 0.000 | 10630.4 | 2309 | 436 | 2745 | 3 | 6 | Poor - missing most key entities or incomplete answer |
+| 6 | 0.500 | 1.000 | 0.333 | 1.000 | 1.000 | 15901.0 | 2884 | 734 | 3618 | 2 | 3 | Excellent - covers all key entities and provides detailed explanation |
+| 7 | 1.000 | 1.000 | 0.400 | 0.300 | 0.000 | 11797.3 | 5189 | 548 | 5737 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 1.000 | 0.533 | 0.333 | 22351.2 | 5665 | 1174 | 6839 | 3 | 1 | Fair - covers some key entities but missing important details |
+| 9 | 0.500 | 1.000 | 0.333 | 0.475 | 0.250 | 14075.8 | 1784 | 654 | 2438 | 4 | 6 | Poor - missing most key entities or incomplete answer |
+| 10 | 0.500 | 1.000 | 0.286 | 0.767 | 0.667 | 20007.0 | 2106 | 1036 | 3142 | 4 | 7 | Good - covers most key entities |
+
+**性能汇总**:
+- 平均延迟: 12379.7ms
+- 总延迟: 123796.9ms
+- 平均 Prompt Token: 3132
+- 总 Prompt Token: 31325
+- 平均 Completion Token: 618
+- 总 Completion Token: 6184
+- 平均总 Token: 3751
+- 总 Token: 37509
+- 平均答案质量: 0.615
+
+#### full_system_new_rerank
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.500 | 1.000 | 0.200 | 0.533 | 0.333 | 129263.8 | 727 | 1706 | 2433 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 0.667 | 1.000 | 0.400 | 0.767 | 0.667 | 251163.5 | 1657 | 1153 | 2810 | 3 | 5 | Good - covers most key entities |
+| 3 | 0.500 | 1.000 | 0.200 | 0.650 | 0.500 | 290983.9 | 1310 | 2009 | 3319 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 4 | 0.500 | 1.000 | 0.200 | 0.650 | 0.500 | 171215.7 | 2756 | 1303 | 4059 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 5 | 0.333 | 1.000 | 0.200 | 0.533 | 0.333 | 335285.5 | 1532 | 2010 | 3542 | 3 | 5 | Fair - covers some key entities but missing important details |
+| 6 | 0.500 | 1.000 | 0.200 | 0.475 | 0.250 | 230219.1 | 1742 | 1635 | 3377 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 7 | 0.500 | 1.000 | 0.250 | 0.300 | 0.000 | 290857.6 | 1849 | 455 | 2304 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 0.200 | 0.533 | 0.333 | 184281.9 | 2376 | 964 | 3340 | 3 | 5 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.200 | 0.475 | 0.250 | 275754.0 | 1022 | 574 | 1596 | 4 | 5 | Poor - missing most key entities or incomplete answer |
+| 10 | 0.250 | 1.000 | 0.200 | 0.533 | 0.333 | 172986.9 | 891 | 2381 | 3272 | 4 | 5 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 233201.2ms
+- 总延迟: 2332011.9ms
+- 平均 Prompt Token: 1586
+- 总 Prompt Token: 15862
+- 平均 Completion Token: 1419
+- 总 Completion Token: 14190
+- 平均总 Token: 3005
+- 总 Token: 30052
+- 平均答案质量: 0.545
+
+#### full_system_fast_new_rerank
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 0.500 | 1.000 | 0.200 | 0.533 | 0.333 | 70497.5 | 704 | 384 | 1088 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 0.667 | 1.000 | 0.400 | 0.300 | 0.000 | 200292.4 | 1341 | 189 | 1530 | 3 | 5 | Poor - missing most key entities or incomplete answer |
+| 3 | 0.500 | 1.000 | 0.200 | 0.475 | 0.250 | 285096.2 | 900 | 544 | 1444 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.200 | 0.650 | 0.500 | 127067.1 | 2672 | 268 | 2940 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 5 | 0.333 | 1.000 | 0.200 | 0.300 | 0.000 | 275376.3 | 1532 | 165 | 1697 | 3 | 5 | Poor - missing most key entities or incomplete answer |
+| 6 | 0.500 | 1.000 | 0.200 | 0.475 | 0.250 | 185960.0 | 1758 | 2224 | 3982 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 7 | 1.000 | 1.000 | 0.400 | 0.300 | 0.000 | 236847.0 | 2596 | 541 | 3137 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 0.200 | 0.533 | 0.333 | 129044.6 | 2138 | 866 | 3004 | 3 | 5 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.200 | 0.475 | 0.250 | 253082.3 | 1031 | 500 | 1531 | 4 | 5 | Poor - missing most key entities or incomplete answer |
+| 10 | 0.250 | 1.000 | 0.200 | 0.533 | 0.333 | 135027.5 | 1363 | 2154 | 3517 | 4 | 5 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 189829.1ms
+- 总延迟: 1898290.9ms
+- 平均 Prompt Token: 1604
+- 总 Prompt Token: 16035
+- 平均 Completion Token: 784
+- 总 Completion Token: 7835
+- 平均总 Token: 2387
+- 总 Token: 23870
+- 平均答案质量: 0.457
+
+#### full_system_chinese_rerank_fix
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 0.400 | 0.533 | 0.333 | 123481.3 | 906 | 1419 | 2325 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 0.333 | 1.000 | 0.200 | 0.533 | 0.333 | 312132.8 | 2494 | 1207 | 3701 | 3 | 5 | Fair - covers some key entities but missing important details |
+| 3 | 0.500 | 1.000 | 0.200 | 0.300 | 0.000 | 333066.4 | 1029 | 1457 | 2486 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.200 | 0.650 | 0.500 | 159051.1 | 2774 | 1242 | 4016 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 5 | 0.333 | 1.000 | 0.200 | 0.533 | 0.333 | 256133.7 | 1485 | 1586 | 3071 | 3 | 5 | Fair - covers some key entities but missing important details |
+| 6 | 0.500 | 1.000 | 0.200 | 0.475 | 0.250 | 185810.3 | 1323 | 741 | 2064 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 7 | 0.500 | 1.000 | 0.250 | 0.300 | 0.000 | 336437.7 | 1948 | 434 | 2382 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 0.200 | 0.533 | 0.333 | 167180.8 | 2377 | 895 | 3272 | 3 | 5 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.200 | 0.650 | 0.500 | 230359.9 | 1455 | 731 | 2186 | 4 | 5 | Fair - covers some key entities but missing important details |
+| 10 | 0.250 | 1.000 | 0.200 | 0.533 | 0.333 | 134186.2 | 1410 | 854 | 2264 | 4 | 5 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 223784.0ms
+- 总延迟: 2237840.2ms
+- 平均 Prompt Token: 1720
+- 总 Prompt Token: 17201
+- 平均 Completion Token: 1057
+- 总 Completion Token: 10566
+- 平均总 Token: 2777
+- 总 Token: 27767
+- 平均答案质量: 0.504
+
+#### full_system_fast_chinese_rerank_fix
+
+| 查询ID | 召回率 | 命中率 | 精确率 | 答案质量 | 实体覆盖率 | 延迟(ms) | Prompt Token | Completion Token | 总Token | 期望文件数 | 检索文件数 | 质量说明 |
+|--------|--------|--------|--------|--------|---------|----------|-------------|-----------------|---------|-----------|-----------|--------|
+| 1 | 1.000 | 1.000 | 0.400 | 0.533 | 0.333 | 74175.0 | 884 | 330 | 1214 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 2 | 0.333 | 1.000 | 0.200 | 0.767 | 0.667 | 175817.1 | 1485 | 162 | 1647 | 3 | 5 | Good - covers most key entities |
+| 3 | 0.500 | 1.000 | 0.200 | 0.300 | 0.000 | 209388.3 | 1191 | 38 | 1229 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 4 | 0.500 | 1.000 | 0.200 | 0.650 | 0.500 | 138442.0 | 2725 | 199 | 2924 | 2 | 5 | Fair - covers some key entities but missing important details |
+| 5 | 0.333 | 1.000 | 0.200 | 0.300 | 0.000 | 246362.6 | 1428 | 355 | 1783 | 3 | 5 | Poor - missing most key entities or incomplete answer |
+| 6 | 0.500 | 1.000 | 0.200 | 0.475 | 0.250 | 188993.2 | 1337 | 2292 | 3629 | 2 | 5 | Poor - missing most key entities or incomplete answer |
+| 7 | 0.500 | 1.000 | 0.250 | 0.300 | 0.000 | 326985.4 | 1955 | 465 | 2420 | 2 | 4 | Poor - missing most key entities or incomplete answer |
+| 8 | 0.333 | 1.000 | 0.200 | 0.533 | 0.333 | 136070.2 | 2385 | 727 | 3112 | 3 | 5 | Fair - covers some key entities but missing important details |
+| 9 | 0.250 | 1.000 | 0.200 | 0.650 | 0.500 | 203703.4 | 1454 | 590 | 2044 | 4 | 5 | Fair - covers some key entities but missing important details |
+| 10 | 0.250 | 1.000 | 0.200 | 0.533 | 0.333 | 138428.1 | 1364 | 2177 | 3541 | 4 | 5 | Fair - covers some key entities but missing important details |
+
+**性能汇总**:
+- 平均延迟: 183836.5ms
+- 总延迟: 1838365.3ms
+- 平均 Prompt Token: 1621
+- 总 Prompt Token: 16208
+- 平均 Completion Token: 734
+- 总 Completion Token: 7335
+- 平均总 Token: 2354
+- 总 Token: 23543
+- 平均答案质量: 0.504
+
 ## 总体对比
 
 | 项目 | 系统 | 平均召回率 | 平均命中率 | 平均精确率 | 平均答案质量 | 可回答率 | 端到端成功率 | 平均充分性 | 平均正确性 | 平均事实性 | 检索差距 | 平均延迟(ms) | 平均总Token |
@@ -460,6 +1054,9 @@
 | travel_agent | full_system_fast | 0.975 | 1.000 | 0.642 | 0.907 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 15157.2 | 2502 |
 | travel_agent | full_system_new_chunk | 0.975 | 1.000 | 0.642 | 0.930 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 38786.0 | 2745 |
 | travel_agent | full_system_fast_new_chunk | 0.975 | 1.000 | 0.642 | 0.930 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 13730.5 | 2484 |
+| travel_agent | full_system_new_chunk_bilingual | 0.975 | 1.000 | 0.642 | 0.953 | 90.0% | 90.0% | 1.90 | 2.00 | 2.00 | -0.10 | 52035.1 | 2738 |
+| travel_agent | full_system_fast_new_chunk_bilingual | 0.975 | 1.000 | 0.642 | 0.930 | 90.0% | 90.0% | 1.90 | 2.00 | 2.00 | -0.10 | 15120.7 | 2527 |
+| travel_agent | full_system_fast_new_rerank | 0.875 | 1.000 | 0.475 | 0.918 | 80.0% | 100.0% | 1.80 | 2.00 | 2.00 | -0.20 | 61584.3 | 2742 |
 | cuezero | llm_only | 0.000 | 0.000 | 0.000 | 0.446 | 0.0% | 50.0% | 0.00 | 2.00 | 1.00 | -2.00 | 21760.5 | 3590 |
 | cuezero | naive_rag | 0.500 | 1.000 | 0.260 | 0.627 | 100.0% | 100.0% | 2.00 | 2.00 | 2.00 | 0.00 | 15034.3 | 14100 |
 | cuezero | structured_rag | 0.325 | 0.700 | 0.320 | 0.574 | 70.0% | 70.0% | 1.50 | 1.70 | 1.90 | -0.20 | 20691.7 | 4585 |
@@ -468,6 +1065,25 @@
 | cuezero | full_system_fast | 0.558 | 0.900 | 0.337 | 0.469 | 60.0% | 80.0% | 1.50 | 1.80 | 2.00 | -0.30 | 14342.8 | 1634 |
 | cuezero | full_system_new_chunk | 0.558 | 0.900 | 0.378 | 0.527 | 70.0% | 80.0% | 1.60 | 1.80 | 2.00 | -0.20 | 42752.6 | 2340 |
 | cuezero | full_system_fast_new_chunk | 0.558 | 0.900 | 0.337 | 0.469 | 80.0% | 70.0% | 1.70 | 1.60 | 2.00 | 0.10 | 14732.1 | 1729 |
+| cuezero | full_system_new_chunk_bilingual | 0.508 | 0.900 | 0.358 | 0.557 | 70.0% | 70.0% | 1.70 | 1.80 | 1.90 | -0.10 | 63561.8 | 2872 |
+| cuezero | full_system_fast_new_chunk_bilingual | 0.483 | 0.900 | 0.338 | 0.492 | 60.0% | 60.0% | 1.50 | 1.70 | 2.00 | -0.20 | 15065.8 | 2248 |
+| cuezero | full_system_new_chunk_llm_summary | 0.558 | 1.000 | 0.530 | 0.557 | 60.0% | 40.0% | 1.50 | 1.20 | 1.80 | 0.30 | 77063.3 | 2755 |
+| cuezero | full_system_fast_new_chunk_llm_summary | 0.558 | 1.000 | 0.533 | 0.551 | 60.0% | 40.0% | 1.50 | 1.10 | 1.80 | 0.40 | 18541.7 | 2169 |
+| cuezero | full_system_fast_new_rerank | 0.433 | 1.000 | 0.230 | 0.498 | 80.0% | 60.0% | 1.70 | 1.50 | 2.00 | 0.20 | 207083.7 | 2371 |
+| travel_agent | structured_rag_new_chunk_llm_summary_fixed | 1.000 | 1.000 | 0.585 | 0.953 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 17476.1 | 3416 |
+| travel_agent | full_system_new_chunk_llm_summary_fixed | 1.000 | 1.000 | 0.480 | 0.953 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 51349.4 | 4162 |
+| travel_agent | full_system_fast_new_chunk_llm_summary_fixed | 1.000 | 1.000 | 0.480 | 0.953 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 12842.7 | 3995 |
+| cuezero | structured_rag_new_chunk_llm_summary_fixed | 0.483 | 0.900 | 0.462 | 0.539 | 60.0% | 40.0% | 1.50 | 1.70 | 1.40 | -0.20 | 26146.8 | 2952 |
+| cuezero | full_system_new_chunk_llm_summary_fixed | 0.650 | 1.000 | 0.383 | 0.644 | 60.0% | 50.0% | 1.50 | 1.80 | 1.50 | -0.30 | 59577.3 | 3945 |
+| cuezero | full_system_fast_new_chunk_llm_summary_fixed | 0.650 | 1.000 | 0.424 | 0.615 | 60.0% | 60.0% | 1.50 | 1.60 | 1.40 | -0.10 | 12379.7 | 3751 |
+| travel_agent | full_system_new_rerank | 0.875 | 1.000 | 0.480 | 0.848 | 80.0% | 100.0% | 1.80 | 2.00 | 2.00 | -0.20 | 100296.6 | 3096 |
+| travel_agent | full_system_fast_new_rerank | 0.875 | 1.000 | 0.465 | 0.848 | 80.0% | 100.0% | 1.80 | 2.00 | 2.00 | -0.20 | 58530.0 | 2678 |
+| cuezero | full_system_new_rerank | 0.433 | 1.000 | 0.225 | 0.545 | 80.0% | 70.0% | 1.70 | 1.80 | 1.90 | -0.10 | 233201.2 | 3005 |
+| cuezero | full_system_fast_new_rerank | 0.483 | 1.000 | 0.240 | 0.457 | 80.0% | 60.0% | 1.70 | 1.50 | 2.00 | 0.20 | 189829.1 | 2387 |
+| travel_agent | full_system_chinese_rerank_fix | 0.975 | 1.000 | 0.485 | 0.918 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 94292.8 | 3307 |
+| travel_agent | full_system_fast_chinese_rerank_fix | 0.975 | 1.000 | 0.490 | 0.953 | 90.0% | 100.0% | 1.90 | 2.00 | 2.00 | -0.10 | 65952.5 | 3170 |
+| cuezero | full_system_chinese_rerank_fix | 0.450 | 1.000 | 0.225 | 0.504 | 100.0% | 80.0% | 2.00 | 1.90 | 1.90 | 0.10 | 223784.0 | 2777 |
+| cuezero | full_system_fast_chinese_rerank_fix | 0.450 | 1.000 | 0.225 | 0.504 | 100.0% | 90.0% | 2.00 | 1.80 | 2.00 | 0.20 | 183836.5 | 2354 |
 
 ## 指标说明
 
