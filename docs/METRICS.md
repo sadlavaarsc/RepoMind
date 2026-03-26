@@ -42,7 +42,7 @@ This test suite evaluates RepoMind on two representative codebases. Test questio
 
 ---
 
-#### Complex Query (cuezero, well-answered)
+#### Complex Query (cuezero)
 **Question**: "详细解释 MCTS 搜索是如何为连续动作空间优化的？" (How is MCTS search optimized for continuous action spaces?)
 
 **Full System Answer**:
