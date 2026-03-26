@@ -33,11 +33,11 @@
 </p>
 
 <p align="center">
-  A <b>token-efficient code-aware RAG system</b> for repository understanding.
+  A <b>highly token-efficient code-aware RAG system</b> specialized for repository understanding.
 </p>
 
 <p align="center">
-  ~80% token reduction vs naive RAG on large codebases, with comparable accuracy.
+  ~80% token reduction vs naive RAG on large codebases, while maintaining comparable accuracy.
 </p>
 
 ---
@@ -57,21 +57,23 @@
   •
   <a href="#-quick-start">Quick Start</a>
   •
-  <a href="#-core-modules">Modules</a>
-  •
   <a href="#-baseline-results">Results</a>
+  •
+  <a href="docs/MODULES.md">Modules</a>
+  •
+  <a href="docs/METRICS.md">Metrics</a>
 </p>
 
 ---
 
 ## 🔥 Highlights
 
-- **Multi-level Code Chunking**: AST-aware file/class/function/block chunking with structured data extraction
+- **Specialized Code Chunking**: AST-aware file/class/function/block chunking with structured data extraction
 - **LLM Summary Generation**: Auto-generated chunk summaries during indexing for better retrieval quality
-- **Chinese Optimization**: 2-gram + 3-gram matching with meaningless pronoun exclusion
-- **Token Efficiency**: ~80% token reduction vs naive RAG on large repos (14100 → 1634 tokens)
-- **Dual Model Strategy**: Fast model for simple questions, strong model for complex questions
-- **MCP Support**: Model Context Protocol for seamless AI tool integration
+- **Chinese Optimization**: n-gram matching with meaningless pronoun exclusion
+- **Token Efficiency**: ~80% token reduction vs non-optimized RAG on large repos (14100 → 1634 tokens)
+- **Dual Model Strategy**: Fast model for simple questions, strong model for complex questions, ensuring accuracy while optimizing cost and latency
+- **MCP Support**: Model Context Protocol for easy AI tool integration
 
 ## 📊 Performance / Key Insight
 
@@ -86,7 +88,7 @@
 
 - **Small repos**: Comparable or slightly better accuracy than naive RAG
 - **Large repos**: ~5-10% lower accuracy in single-query setting, but massive token savings
-- **Token reduction**: 88% on cuezero (14100 → 1634 tokens), 21% on travel_agent (3163 → 2502 tokens)
+- **Token reduction**: ~88% on medium-large projects (14100 → 1634 tokens), ~21% on small projects (3163 → 2502 tokens)
 
 See [full baseline results](#-baseline-results) below for detailed metrics.
 
@@ -118,7 +120,7 @@ See [full baseline results](#-baseline-results) below for detailed metrics.
 - **Function-level**: Function inputs, outputs, and call relationships
 - **Block-level**: Code blocks in script files
 
-**Trade-offs**: Finer granularity improves precision but may lose context; solved with LLM-generated summaries that preserve context while keeping individual chunks focused.
+**Trade-offs**: Finer granularity improves precision but may lose context; solved with low-cost fast LLM-generated summaries that preserve context while keeping individual chunks focused.
 
 ### 2. Reranker Design: Multi-factor Optimization
 **Challenge**: Chinese queries require different handling, and diversity matters in retrieval results
@@ -134,8 +136,8 @@ See [full baseline results](#-baseline-results) below for detailed metrics.
 **Challenge**: Reducing token usage while maintaining answer quality
 
 **Solution**:
-- **LLM Summaries**: Use qwen-flash to generate concise summaries instead of sending full code
-- **Dual Model Strategy**: Simple questions use fast model (qwen-flash), complex questions use strong model (qwen3.5-plus)
+- **LLM Summaries**: Use low-cost fast LLM (default: qwen-flash) to generate concise summaries instead of sending full code
+- **Dual Model Strategy**: Simple questions use fast model (qwen-flash), complex questions use strong model (qwen3.5-plus), saving cost and optimizing response speed
 - **Structured Data**: Extract imports, signatures, calls instead of using full code
 - **Smart Context Packing**: Prioritize summary > structured data > code
 
@@ -192,12 +194,12 @@ graph TD
 ### Environment Requirements
 
 - Python 3.9+
-- Conda environment: `agentEnv`
+- Conda environment: `RepoMind`
 
 ### Installation
 
 ```bash
-conda activate agentEnv
+conda create -n RepoMind python=3.11
 pip install -r requirements.txt
 ```
 
@@ -222,7 +224,7 @@ repomind = RepoMind()
 
 # Or with custom configuration
 repomind = RepoMind(
-    enable_query_expansion=True,      # Enable query expansion
+    enable_query_expansion=True,      # Enable query expansion (MQE)
     enable_query_classification=True,  # Enable question classification
     query_expansion_variants=2,         # Number of query expansion variants
     use_fast_llm_for_expansion=True,    # Use fast LLM for query expansion
@@ -249,11 +251,29 @@ conda activate agentEnv && python scripts/test_core.py
 conda activate agentEnv && uvicorn repomind.api.main:app --reload
 ```
 
-API documentation: http://localhost:8000/docs
+#### Index Repository
+
+```bash
+POST /index
+{
+  "repo_path": "/path/to/repository"
+}
+```
+
+#### Query Repository
+
+```bash
+POST /query
+{
+  "question": "What does this project do?"
+}
+```
+
+Full API documentation: http://localhost:8000/docs
 
 ### Start MCP Service
 
-RepoMind supports MCP (Model Context Protocol) for easy integration with Claude Desktop and other AI tools:
+RepoMind supports MCP (Model Context Protocol) for integration with Claude Desktop, Claude Code, and other AI tools:
 
 ```bash
 conda activate agentEnv && python scripts/start_mcp_server.py
@@ -273,7 +293,7 @@ Add to Claude Desktop config:
   "mcpServers": {
     "repomind": {
       "command": "conda",
-      "args": ["run", "-n", "agentEnv", "python", "/path/to/RepoMind/scripts/start_mcp_server.py"]
+      "args": ["run", "-n", "RepoMind", "python", "/path/to/RepoMind/scripts/start_mcp_server.py"]
     }
   }
 }
@@ -281,130 +301,13 @@ Add to Claude Desktop config:
 
 ## 📦 Core Modules
 
-### 1. Ingestion
-
-**Location**: `repomind/ingestion/`
-
-- **chunker.py**: Multi-level code chunker
-  - file level: Whole module overview
-  - class level: Class responsibilities and methods
-  - function level: Function inputs, outputs, and call relationships
-  - block level: Code blocks in script files
-
-- **summary_generator.py**: LLM summary generator
-  - Uses qwen-flash for fast generation
-  - Uses only structured data, not full code
-  - Summary included in embedding text
-
-- **models.py**: CodeChunk data model
-  - chunk_type, name, signature, docstring
-  - summary, structured_data
-  - embedding_text (for embeddings)
-
-### 2. Retrieval
-
-**Location**: `repomind/retrieval/`
-
-- **pipeline.py**: Multi-stage retrieval pipeline
-  - Query expansion (MQE)
-  - Vector search
-  - Reranking
-
-- **query_expander.py**: Query expander
-  - Supports custom models
-  - Generates multiple query variants
-
-- **query_classifier.py**: Query classifier
-  - simple/complex binary classification
-  - Used for dual model strategy
-
-- **reranker.py**: Reranker (Latest optimization!)
-  - Bucket guarantee: At least 1 document + 1 code
-  - Chinese optimization: 2-gram + 3-gram matching
-  - Meaningless word filter: Chinese pronoun exclusion table
-  - MMR diversity: Maximal Marginal Relevance
-  - Weight tuning: alpha=0.85 (cosine), beta=0.15 (keywords)
-
-### 3. Generation
-
-**Location**: `repomind/generation/`
-
-- **answer_generator.py**: Answer generator
-  - Supports dual LLM Service
-  - Smart model selection
-
-- **llm_service.py**: LLM service wrapper
-  - OpenAI compatible interface
-  - Supports custom base_url and model
-
-### 4. Evaluation
-
-**Location**: `repomind/evaluation/`
-
-- **retrieval_metrics.py**: Retrieval metrics
-  - Recall
-  - Hit Rate
-  - Precision
-
-- **llm_evaluator.py**: LLM answer evaluation
-  - Sufficiency
-  - Correctness
-  - Grounding
-
-- **llm_metrics.py**: LLM metrics aggregation
-  - Answerable Rate
-  - End-to-end Success Rate
-  - Retrieval Gap
-
-## 📊 Evaluation Metrics
-
-### Retrieval Metrics
-
-| Metric | Definition | Formula |
-|--------|------------|---------|
-| **Recall** | Fraction of relevant chunks retrieved | `|Retrieved ∩ Relevant| / |Relevant|` |
-| **Hit Rate** | Fraction of questions with at least one relevant chunk | `1.0 if |Retrieved ∩ Relevant| > 0 else 0.0` |
-| **Precision** | Fraction of retrieved chunks that are relevant | `|Retrieved ∩ Relevant| / |Retrieved|` |
-
-All retrieval metrics are calculated at the file level using source file paths. See `repomind/evaluation/retrieval_metrics.py` for implementation details.
-
-### LLM Evaluation Metrics
-
-LLM-based evaluation uses qwen-flash to assess answer quality in three dimensions:
-
-| Metric | Scale | Definition |
-|--------|-------|------------|
-| **Sufficiency** | 0-2 | Is the retrieved context sufficient to answer the question?<br/>2 = Fully sufficient, 1 = Partially sufficient, 0 = Not sufficient |
-| **Correctness** | 0-2 | Is the answer correct and complete compared to ground truth?<br/>2 = Correct and complete, 1 = Partially correct, 0 = Incorrect |
-| **Grounding** | 0-2 | Are all claims in the answer supported by the context?<br/>2 = Fully grounded, 1 = Partially grounded, 0 = Not grounded |
-
-See `repomind/evaluation/llm_evaluator.py` for the prompt templates and evaluation logic.
-
-### Aggregate Metrics
-
-| Metric | Definition | Formula |
-|--------|------------|---------|
-| **Answerable Rate** | Fraction of questions with sufficiency == 2 | `count(sufficiency == 2) / N` |
-| **End-to-end Success Rate** | Fraction of questions with correctness == 2 AND grounding == 2 | `count(correctness == 2 AND grounding == 2) / N` |
-| **Retrieval Gap** | Average gap between sufficiency and correctness | `avg(sufficiency - correctness)` |
-| **Avg Sufficiency** | Average sufficiency score across all questions | `sum(sufficiency) / N` |
-| **Avg Correctness** | Average correctness score across all questions | `sum(correctness) / N` |
-| **Avg Grounding** | Average grounding score across all questions | `sum(grounding) / N` |
-
-See `repomind/evaluation/llm_metrics.py` for implementation details.
-
-### Performance Metrics
-
-| Metric | Definition |
-|--------|------------|
-| **Avg Latency** | Average query response time in milliseconds |
-| **Avg Total Token** | Average total tokens consumed per query (prompt + completion) |
-| **Avg Prompt Token** | Average prompt tokens per query |
-| **Avg Completion Token** | Average completion tokens per query |
+See [docs/MODULES.md](docs/MODULES.md).
 
 ## 📈 Baseline Results
 
 ### Test Projects
+
+For evaluation metrics, see [docs/METRICS.md](docs/METRICS.md). Tested projects:
 
 1. **travel_agent** (small): LLM-based travel assistant agent
 2. **cuezero** (medium-large): High-performance billiards AI system
@@ -413,9 +316,9 @@ See `repomind/evaluation/llm_metrics.py` for implementation details.
 
 | System | Description |
 |--------|-------------|
-| LLM-only | No retrieval |
-| Naive RAG | File-level chunks |
-| Structured RAG | Function-level chunks |
+| LLM-only | No retrieval (specific files provided as context, with necessary truncation for large files to save cost) |
+| Naive RAG | Non-optimized generic RAG implementation, using file-level chunks to avoid recall degradation from fragmented splitting |
+| Structured RAG | Complete ingestion pipeline + naive retrieval + naive rerank |
 | Full System | Full optimization (qwen3.5-plus) |
 | Full System Fast | Full optimization + dual model strategy (qwen-flash + qwen3.5-plus) |
 
@@ -439,44 +342,7 @@ See `repomind/evaluation/llm_metrics.py` for implementation details.
 | full_system | 0.450 | 1.000 | 100.0% | 80.0% | 1.70 | 2.00 | 2313 | 48915.8 |
 | full_system_fast | 0.450 | 1.000 | 100.0% | 90.0% | 1.80 | 2.00 | 1634 | 14342.8 |
 
-### Key Improvements (chinese_rerank_fix)
-
-1. **Chinese Keyword Matching Optimization**
-   - Added 2-gram + 3-gram matching
-   - Meaningless pronoun exclusion table ("我", "我们", "你", "你们", etc.)
-   - README_zh.md can now be correctly retrieved!
-
-2. **Weight Tuning**
-   - alpha=0.85 (cosine similarity weight)
-   - beta=0.15 (keyword score weight)
-   - Keyword score as "icing on the cake", not the primary factor
-
-3. **Bucket Guarantee**
-   - At least 1 document chunk
-   - At least 1 code chunk
-   - Ensures diversity in retrieval results
-
----
-
-## 📡 API Usage
-
-### Index Repository
-
-```bash
-POST /index
-{
-  "repo_path": "/path/to/repository"
-}
-```
-
-### Query Repository
-
-```bash
-POST /query
-{
-  "question": "What does this project do?"
-}
-```
+Average latency may be slightly higher due to network reasons. Actual performance can be referenced based on actual business conditions and llm_only values. This is for comparison purposes only.
 
 ---
 
