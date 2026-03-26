@@ -15,6 +15,7 @@ RepoMind 是一个模块化的代码仓库理解系统，使用 RAG 技术来回
 - **混合答案生成**: 简单问题用 fast 模型，复杂问题用 strong 模型
 - **可扩展架构**: 向量存储抽象层，便于未来迁移到 Qdrant
 - **FastAPI 服务**: 生产就绪的 API 接口
+- **MCP 服务**: 支持 Model Context Protocol，便于接入其他 AI 工具
 
 ## 快速开始
 
@@ -79,6 +80,34 @@ conda activate agentEnv && uvicorn repomind.api.main:app --reload
 ```
 
 API 文档访问: http://localhost:8000/docs
+
+### 启动 MCP 服务
+
+RepoMind 支持 MCP (Model Context Protocol)，可以轻松接入 Claude Desktop 等支持 MCP 的 AI 工具：
+
+```bash
+conda activate agentEnv && python scripts/start_mcp_server.py
+```
+
+**MCP 工具列表**:
+- `index_repository(repo_path)` - 索引代码仓库
+- `query_repository(question)` - 查询已索引的仓库
+- `get_health()` - 检查服务健康状态
+- `save_index(index_path)` - 保存索引到磁盘
+- `load_index(index_path)` - 从磁盘加载索引
+
+**Claude Desktop 配置示例**:
+在 Claude Desktop 的配置文件中添加：
+```json
+{
+  "mcpServers": {
+    "repomind": {
+      "command": "conda",
+      "args": ["run", "-n", "agentEnv", "python", "/path/to/RepoMind/scripts/start_mcp_server.py"]
+    }
+  }
+}
+```
 
 ## 系统架构
 
@@ -221,23 +250,23 @@ API 文档访问: http://localhost:8000/docs
 
 ### travel_agent 项目结果
 
-| 系统 | 平均召回率 | 平均命中率 | 可回答率 | 端到端成功率 | 平均延迟(ms) |
-|------|-----------|-----------|---------|------------|------------|
-| llm_only | 0.000 | 0.000 | 0.0% | 40.0% | 14463.6 |
-| naive_rag | 1.000 | 1.000 | 90.0% | 100.0% | 12789.5 |
-| structured_rag | 0.950 | 1.000 | 80.0% | 100.0% | 13869.1 |
-| full_system (chinese_rerank_fix) | 0.975 | 1.000 | 90.0% | 100.0% | 94292.8 |
-| full_system_fast (chinese_rerank_fix) | 0.975 | 1.000 | 90.0% | 100.0% | 65952.5 |
+| 系统 | 平均召回率 | 平均命中率 | 可回答率 | 端到端成功率 | 平均正确性 | 平均事实性 | 平均总Token | 平均延迟(ms) |
+|------|-----------|-----------|---------|------------|-----------|-----------|-----------|------------|
+| llm_only | 0.000 | 0.000 | 0.0% | 40.0% | 2.00 | 0.80 | 3136 | 14463.6 |
+| naive_rag | 1.000 | 1.000 | 90.0% | 100.0% | 2.00 | 2.00 | 3163 | 12789.5 |
+| structured_rag | 0.975 | 1.000 | 80.0% | 100.0% | 2.00 | 2.00 | 2686 | 13869.1 |
+| full_system | 0.975 | 1.000 | 90.0% | 100.0% | 2.00 | 2.00 | 2845 | 37362.6 |
+| full_system_fast | 0.975 | 1.000 | 90.0% | 100.0% | 2.00 | 2.00 | 2502 | 15157.2 |
 
 ### cuezero 项目结果
 
-| 系统 | 平均召回率 | 平均命中率 | 可回答率 | 端到端成功率 | 平均延迟(ms) |
-|------|-----------|-----------|---------|------------|------------|
-| llm_only | 0.000 | 0.000 | 0.0% | 20.0% | 19103.3 |
-| naive_rag | 0.633 | 1.000 | 60.0% | 60.0% | 20927.2 |
-| structured_rag | 0.500 | 1.000 | 60.0% | 50.0% | 22037.6 |
-| full_system (chinese_rerank_fix) | 0.450 | 1.000 | 100.0% | 80.0% | 223784.0 |
-| full_system_fast (chinese_rerank_fix) | 0.450 | 1.000 | 100.0% | 90.0% | 183836.5 |
+| 系统 | 平均召回率 | 平均命中率 | 可回答率 | 端到端成功率 | 平均正确性 | 平均事实性 | 平均总Token | 平均延迟(ms) |
+|------|-----------|-----------|---------|------------|-----------|-----------|-----------|------------|
+| llm_only | 0.000 | 0.000 | 0.0% | 50.0% | 2.00 | 1.00 | 3590 | 21760.5 |
+| naive_rag | 0.500 | 1.000 | 100.0% | 100.0% | 2.00 | 2.00 | 14100 | 15034.3 |
+| structured_rag | 0.400 | 0.900 | 70.0% | 70.0% | 1.70 | 2.00 | 3420 | 20691.7 |
+| full_system | 0.450 | 1.000 | 100.0% | 80.0% | 1.70 | 2.00 | 2313 | 48915.8 |
+| full_system_fast | 0.450 | 1.000 | 100.0% | 90.0% | 1.80 | 2.00 | 1634 | 14342.8 |
 
 ### 关键改进 (chinese_rerank_fix)
 
@@ -268,7 +297,8 @@ repomind/
 │   ├── indexing/           # 嵌入与向量索引
 │   │   └── embedding_service.py
 │   ├── storage/            # 向量存储抽象
-│   │   └── faiss_store.py
+│   │   ├── vector_store.py # 抽象基类
+│   │   └── faiss_store.py  # FAISS 实现
 │   ├── retrieval/          # 多阶段检索 pipeline
 │   │   ├── pipeline.py     # 检索主流程
 │   │   ├── query_expander.py  # 查询扩展
@@ -283,7 +313,10 @@ repomind/
 │   │   ├── llm_metrics.py
 │   │   └── result_parser.py
 │   ├── api/                # FastAPI 服务
-│   │   └── main.py
+│   │   ├── main.py
+│   │   └── schemas.py
+│   ├── mcp/                # MCP 服务
+│   │   └── server.py
 │   ├── configs/            # 配置管理
 │   │   └── settings.py
 │   ├── baselines/          # 基线系统
@@ -305,8 +338,12 @@ repomind/
 │   ├── run_baseline_comparison.py
 │   ├── analyze_baseline_results.py
 │   ├── run_full_llm_eval.py
+│   ├── start_mcp_server.py
 │   └── ...
 ├── tests/                  # 测试套件
+│   ├── test_api.py
+│   ├── test_storage.py
+│   └── ...
 ├── requirements.txt
 └── README.md
 ```
@@ -352,9 +389,23 @@ POST /query
 - [x] Phase 8: 基线对比测试
 - [x] Phase 9: Fast LLM 阶梯实现
 - [x] Phase 10: 多级 Chunk + LLM Summary
-- [x] Phase 11: 中文 Reranker 优化 (当前!)
+- [x] Phase 11: 中文 Reranker 优化
+- [x] Phase 12: 项目完善与收尾 (FAISS 增强 / MCP 服务 / 文档更新)
 
 ## 重要更新记录
+
+### 2026-03-26: 项目完善与收尾
+
+**关键改进**:
+- **FAISS 中间层增强**: 添加 delete、update、clear、get_chunks_by_file、count、exists 等方法
+- **MCP 服务支持**: 新增 MCP (Model Context Protocol) 服务器，便于接入 Claude Desktop 等 AI 工具
+- **FastAPI 单元测试**: 添加 API 端点测试
+- **README 更新**: 完善基线测试结果表格，增加平均正确性、平均事实性、平均总Token 指标
+
+**新增文件**:
+- `repomind/mcp/server.py` - MCP 服务器
+- `scripts/start_mcp_server.py` - MCP 服务启动脚本
+- `tests/test_api.py` - FastAPI 单元测试
 
 ### 2026-03-26: 中文 Reranker 优化
 
