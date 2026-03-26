@@ -57,9 +57,11 @@
   •
   <a href="#-快速开始">快速开始</a>
   •
-  <a href="#-核心模块">模块</a>
-  •
   <a href="#-基线测试结果">结果</a>
+  •
+  <a href="docs/MODULES_zh.md">模块</a>
+  •
+  <a href="docs/METRICS_zh.md">指标</a>
 </p>
 
 ---
@@ -86,7 +88,7 @@
 
 - **小仓库**：与 naive RAG 相比，准确率相当或略高
 - **大仓库**：单查询场景下准确率低 ~5-10%，但 Token 节省巨大
-- **Token 减少**：cuezero 上 88%（14100 → 1634 tokens），travel_agent 上 21%（3163 → 2502 tokens）
+- **Token 减少**：中大型项目节省约 88%（14100 → 1634 tokens），小型项目节省约 21%（3163 → 2502 tokens）
 
 详细指标见下方[完整基线测试结果](#-基线测试结果)。
 
@@ -113,17 +115,19 @@
 **挑战**：在粒度和上下文之间取得平衡以实现最佳检索
 
 **解决方案**：
+
 - **文件级**：整个模块概览，包含 imports 和顶层结构
 - **类级**：类的职责和方法
 - **函数级**：函数的输入输出和调用关系
 - **块级**：脚本文件中的代码块
 
-**权衡**：更细的粒度提高了精度，但可能失去上下文；通过 LLM 生成的摘要解决，在保持单个 chunk 专注的同时保留上下文。
+**权衡**：更细的粒度提高了精度，但可能失去上下文；通过低成本高速 LLM 生成的摘要解决，在保持单个 chunk 专注的同时保留上下文。
 
 ### 2. Reranker 设计：多因素优化
 **挑战**：中文查询需要不同的处理方式，检索结果的多样性很重要
 
 **解决方案**：
+
 - **中文 n-gram 匹配**：2-gram + 3-gram 以实现更好的中文关键词匹配
 - **无意义词过滤**：中文代词排除表（"我"、"我们"、"你"、"你们"等）
 - **分桶保证**：至少 1 个文档 chunk + 1 个代码 chunk 以确保多样性
@@ -134,8 +138,9 @@
 **挑战**：在保持答案质量的同时减少 Token 使用
 
 **解决方案**：
-- **LLM 摘要**：使用 qwen-flash 生成简洁摘要，而不是发送完整代码
-- **双模型策略**：简单问题使用 fast 模型（qwen-flash），复杂问题使用 strong 模型（qwen3.5-plus）
+
+- **LLM 摘要**：使用低成本高速 LLM ( 默认设置为qwen-flash ) 生成简洁摘要，而不是发送完整代码
+- **双模型策略**：简单问题使用 fast 模型（qwen-flash），复杂问题使用 strong 模型（qwen3.5-plus），节约成本并优化响应速度
 - **结构化数据**：提取 imports、signatures、calls 而不是使用完整代码
 - **智能上下文打包**：优先顺序：摘要 > 结构化数据 > 代码
 
@@ -192,12 +197,12 @@ graph TD
 ### 环境要求
 
 - Python 3.9+
-- Conda 环境：`agentEnv`
+- Conda 环境：`RepoMind`
 
 ### 安装依赖
 
 ```bash
-conda activate agentEnv
+conda create -n RepoMind python=3.11
 pip install -r requirements.txt
 ```
 
@@ -222,7 +227,7 @@ repomind = RepoMind()
 
 # 或自定义配置
 repomind = RepoMind(
-    enable_query_expansion=True,      # 启用查询扩展
+    enable_query_expansion=True,      # 启用查询扩展(MQE)
     enable_query_classification=True,  # 启用问题分类
     query_expansion_variants=2,         # 查询扩展变体数量
     use_fast_llm_for_expansion=True,    # 查询扩展用 fast LLM
@@ -249,17 +254,36 @@ conda activate agentEnv && python scripts/test_core.py
 conda activate agentEnv && uvicorn repomind.api.main:app --reload
 ```
 
-API 文档访问：http://localhost:8000/docs
+##### 索引仓库
+
+```bash
+POST /index
+{
+  "repo_path": "/path/to/repository"
+}
+```
+
+##### 查询仓库
+
+```bash
+POST /query
+{
+  "question": "这个项目是做什么的？"
+}
+```
+
+详细API 文档启动服务后访问：http://localhost:8000/docs
 
 ### 启动 MCP 服务
 
-RepoMind 支持 MCP (Model Context Protocol)，可以轻松接入 Claude Desktop 等支持 MCP 的 AI 工具：
+RepoMind 支持 MCP (Model Context Protocol)，以便接入 Claude Desktop、Claude Code 等支持 MCP 的 AI 工具：
 
 ```bash
 conda activate agentEnv && python scripts/start_mcp_server.py
 ```
 
 **MCP 工具列表**：
+
 - `index_repository(repo_path)` - 索引代码仓库
 - `query_repository(question)` - 查询已索引的仓库
 - `get_health()` - 检查服务健康状态
@@ -281,139 +305,24 @@ conda activate agentEnv && python scripts/start_mcp_server.py
 
 ## 📦 核心模块
 
-### 1. Ingestion（数据摄入）
-
-**位置**：`repomind/ingestion/`
-
-- **chunker.py**：多级代码分块器
-  - file 级：整个模块概览
-  - class 级：类的职责和方法
-  - function 级：函数的输入输出和调用关系
-  - block 级：脚本文件中的代码块
-
-- **summary_generator.py**：LLM 摘要生成器
-  - 使用 qwen-flash 快速生成
-  - 仅用结构化数据，不用完整代码
-  - 摘要内容包含在嵌入文本中
-
-- **models.py**：CodeChunk 数据模型
-  - chunk_type, name, signature, docstring
-  - summary, structured_data
-  - embedding_text（用于嵌入）
-
-### 2. Retrieval（检索）
-
-**位置**：`repomind/retrieval/`
-
-- **pipeline.py**：多阶段检索 Pipeline
-  - 查询扩展 (MQE)
-  - 向量搜索
-  - 重排序
-
-- **query_expander.py**：查询扩展器
-  - 支持自定义模型
-  - 生成多个查询变体
-
-- **query_classifier.py**：查询分类器
-  - simple/complex 二分类
-  - 用于双模型策略
-
-- **reranker.py**：重排序器（最新优化！）
-  - 分桶保证：至少 1 个文档 + 1 个代码
-  - 中文优化：2-gram + 3-gram 匹配
-  - 无意义词过滤：中文代词排除表
-  - MMR 多样性：Maximal Marginal Relevance
-  - 权重调整：alpha=0.85（余弦），beta=0.15（关键词）
-
-### 3. Generation（答案生成）
-
-**位置**：`repomind/generation/`
-
-- **answer_generator.py**：答案生成器
-  - 支持双 LLM Service
-  - 智能选择模型
-
-- **llm_service.py**：LLM 服务封装
-  - OpenAI 兼容接口
-  - 支持自定义 base_url 和 model
-
-### 4. Evaluation（评估）
-
-**位置**：`repomind/evaluation/`
-
-- **retrieval_metrics.py**：检索指标
-  - 召回率
-  - 命中率
-  - 精确率
-
-- **llm_evaluator.py**：LLM 答案评估
-  - 充分性
-  - 正确性
-  - 事实性
-
-- **llm_metrics.py**：LLM 指标聚合
-  - 可回答率
-  - 端到端成功率
-  - 检索差距
+详见 [docs/MODULES_zh.md](docs/MODULES_zh.md)。
 
 ## 📊 评估指标
 
-### 检索指标
-
-| 指标 | 定义 | 公式 |
-|------|------|------|
-| **召回率** | 检索到的相关 chunk 比例 | `\|检索到的 ∩ 相关的\| / \|相关的\|` |
-| **命中率** | 至少检索到一个相关 chunk 的查询比例 | `1.0 如果 \|检索到的 ∩ 相关的\| > 0 否则 0.0` |
-| **精确率** | 检索到的 chunk 中相关的比例 | `\|检索到的 ∩ 相关的\| / \|检索到的\|` |
-
-所有检索指标都在文件级别使用源文件路径计算。详见 `repomind/evaluation/retrieval_metrics.py`。
-
-### LLM 评估指标
-
-基于 LLM 的评估使用 qwen-flash 从三个维度评估答案质量：
-
-| 指标 | 分值 | 定义 |
-|------|------|------|
-| **充分性** | 0-2 | 检索到的上下文是否足以回答问题？<br/>2 = 完全充分，1 = 部分充分，0 = 不充分 |
-| **正确性** | 0-2 | 与标准答案相比，答案是否正确和完整？<br/>2 = 正确且完整，1 = 部分正确，0 = 不正确 |
-| **事实性** | 0-2 | 答案中的所有主张是否都有上下文支持？<br/>2 = 完全有根据，1 = 部分有根据，0 = 无根据 |
-
-详见 `repomind/evaluation/llm_evaluator.py` 中的提示词模板和评估逻辑。
-
-### 聚合指标
-
-| 指标 | 定义 | 公式 |
-|------|------|------|
-| **可回答率** | 充分性 == 2 的查询比例 | `count(充分性 == 2) / N` |
-| **端到端成功率** | 正确性 == 2 且 事实性 == 2 的查询比例 | `count(正确性 == 2 且 事实性 == 2) / N` |
-| **检索差距** | 充分性与正确性之间的平均差距 | `avg(充分性 - 正确性)` |
-| **平均充分性** | 所有查询的平均充分性分数 | `sum(充分性) / N` |
-| **平均正确性** | 所有查询的平均正确性分数 | `sum(正确性) / N` |
-| **平均事实性** | 所有查询的平均事实性分数 | `sum(事实性) / N` |
-
-详见 `repomind/evaluation/llm_metrics.py`。
-
-### 性能指标
-
-| 指标 | 定义 |
-|------|------|
-| **平均延迟** | 平均查询响应时间（毫秒） |
-| **平均总 Token** | 平均每个查询消耗的总 Token（Prompt + Completion） |
-| **平均 Prompt Token** | 平均每个查询的 Prompt Token |
-| **平均 Completion Token** | 平均每个查询的 Completion Token |
+详见 [docs/METRICS_zh.md](docs/METRICS_zh.md)。
 
 ## 📈 基线测试结果
 
 ### 测试项目
 
-1. **travel_agent**（小项目）：基于 LLM 的旅行助手 Agent
-2. **cuezero**（中大型项目）：高性能台球 AI 系统
+1. **travel_agent**（小项目）：基于 LLM 的旅行助手 Agent ( 见 `测试仓库/` )
+2. **cuezero**（中大型项目）：高性能台球 AI 系统（https://github.com/sadlavaarsc/CueZero）
 
 ### 测试系统
 
 | 系统 | 特点 |
 |------|------|
-| LLM-only | 无检索 |
+| LLM-only | 无检索（具体文件作为上下文提供，对于过大文件进行了必要截断节约成本） |
 | Naive RAG | 文件级 chunk |
 | Structured RAG | 函数级 chunk |
 | Full System | 完整优化（qwen3.5-plus） |
@@ -438,45 +347,6 @@ conda activate agentEnv && python scripts/start_mcp_server.py
 | structured_rag | 0.400 | 0.900 | 70.0% | 70.0% | 1.70 | 2.00 | 3420 | 20691.7 |
 | full_system | 0.450 | 1.000 | 100.0% | 80.0% | 1.70 | 2.00 | 2313 | 48915.8 |
 | full_system_fast | 0.450 | 1.000 | 100.0% | 90.0% | 1.80 | 2.00 | 1634 | 14342.8 |
-
-### 关键改进 (chinese_rerank_fix)
-
-1. **中文关键词匹配优化**
-   - 添加 2-gram + 3-gram 匹配
-   - 无意义代词排除表（"我"、"我们"、"你"、"你们"等）
-   - README_zh.md 现在能正确被检索出来了！
-
-2. **权重调整**
-   - alpha=0.85（余弦相似度权重）
-   - beta=0.15（关键词分数权重）
-   - 关键词分数作为"锦上添花"，不是主要决定因素
-
-3. **分桶保证**
-   - 至少 1 个文档 chunk
-   - 至少 1 个代码 chunk
-   - 确保检索结果的多样性
-
----
-
-## 📡 API 使用
-
-### 索引仓库
-
-```bash
-POST /index
-{
-  "repo_path": "/path/to/repository"
-}
-```
-
-### 查询仓库
-
-```bash
-POST /query
-{
-  "question": "这个项目是做什么的？"
-}
-```
 
 ---
 
