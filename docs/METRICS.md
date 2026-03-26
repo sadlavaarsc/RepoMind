@@ -2,7 +2,7 @@
 
 ## Test Suite Overview
 
-This test suite evaluates RepoMind on two representative codebases:
+This test suite evaluates RepoMind on two representative codebases. Test questions are stored in JSON format under `test_suite/`.
 
 ### 1. travel_agent (small)
 - **Project Type**: LLM-based travel assistant agent using ReAct pattern
@@ -26,7 +26,7 @@ This test suite evaluates RepoMind on two representative codebases:
 
 ### Example Output
 
-#### Query 1 (travel_agent, simple)
+#### Simple Query (travel_agent)
 **Question**: "这个项目是做什么的？" (What does this project do?)
 
 **Full System Answer**:
@@ -42,23 +42,45 @@ This test suite evaluates RepoMind on two representative codebases:
 
 ---
 
-#### Query 2 (cuezero, simple)
-**Question**: "CueZero 是什么项目？" (What is CueZero?)
+#### Complex Query (cuezero, well-answered)
+**Question**: "详细解释 MCTS 搜索是如何为连续动作空间优化的？" (How is MCTS search optimized for continuous action spaces?)
 
 **Full System Answer**:
-> CueZero 是一个高性能台球 AI 系统，它将深度强化学习与专门设计的连续动作蒙特卡洛树搜索（MCTS）相结合。该项目旨在解决高维连续状态和动作空间中的决策难题，并处理复杂的物理动力学。
+> ## MCTS 连续动作空间优化详解
 >
-> 其核心特点包括：
-> - **架构**: 遵循受 AlphaZero 启发的神经引导搜索架构，但针对连续动作空间进行了适配。
-> - **训练**: 使用三阶段训练流程，结合监督预训练与自我对弈强化学习。
-> - **性能**: 模型紧凑（约 160K 参数），对抗规则型基线 Agent 胜率达 95%。
+> CueZero 的 MCTS 针对连续动作空间（台球击球参数）进行了专门优化，主要通过以下四个关键创新：
+>
+> ### 1. 启发式动作生成（Ghost Ball 方法）
+>
+> 传统 MCTS 对连续空间随机采样效率低，CueZero 使用几何启发式生成高质量候选动作：
+>
+> - **Ghost Ball 计算**：通过目标球到袋口的向量，计算理想击球角度
+> - **候选动作生成**：为每个目标球 - 袋口组合生成理想击球及微小扰动变体
+> - **效果**：生成约 30 个高质量候选动作，而非随机采样
+>
+> ### 2. 策略网络引导的剪枝
+>
+> 生成候选动作后，使用策略网络进一步筛选，保留前 2/3 的动作，减少约 66% 的低价值动作，加速收敛。
+>
+> ### 3. 混合价值估计
+>
+> 结合神经网络预测与物理模拟结果：
+> - 浅层深度：物理模拟准确且速度可接受
+> - 深层深度：网络预测快速，避免模拟误差累积
+>
+> ### 4. 动态搜索策略
+>
+> | 模式 | 模拟次数 | 最大深度 | 超时 | 候选动作 | 决策时间 |
+> |------|---------|---------|------|---------|---------|
+> | MCTS-Full | 150 | 4 | 15s | ~30 | ~3 分钟 |
+> | MCTS-Fast | 30 | 2 | 3s | ~10 | ~1 秒 |
 >
 > 参考文件：
-> - README.md
-> - README_zh.md
-> - docs/HOW_IT_WORKS.md
+> - cuezero/mcts/search.py（MCTS 类定义）
+> - docs/HOW_IT_WORKS.md（连续动作 MCTS 详细说明）
+> - docs/TRAINING.md（训练阶段优化策略）
 
-**Token Usage**: 2325 total tokens (Full System)
+**Token Usage**: 3272 total tokens (Full System)
 
 ---
 
