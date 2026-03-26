@@ -1,29 +1,65 @@
-# RepoMind
-
-[![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![FAISS](https://img.shields.io/badge/FAISS-Meta-orange)](https://github.com/facebookresearch/faiss)
-[![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
-[![OpenAI](https://img.shields.io/badge/OpenAI%20SDK-74aa9c?logo=openai&logoColor=white)](https://platform.openai.com/)
-[![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-purple)](https://modelcontextprotocol.io/)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-
-> 📖 **中文文档**: [README_zh.md](README_zh.md)
-> 📝 **Changelog**: [CHANGELOG.md](CHANGELOG.md)
-
-A code-aware RAG (Retrieval-Augmented Generation) system for repository understanding. RepoMind helps AI and developers efficiently explore unfamiliar codebases with token-efficient approaches.
+<h1 align="center">RepoMind</h1>
 
 ---
 
 <p align="center">
-  <a href="#-project-overview">Overview</a> •
-  <a href="#-problem--use-cases">Use Cases</a> •
-  <a href="#-core-features">Features</a> •
-  <a href="#-technical-highlights">Highlights</a> •
-  <a href="#-system-architecture">Architecture</a> •
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-core-modules">Modules</a> •
-  <a href="#-evaluation-metrics">Metrics</a> •
+  <a href="https://www.python.org/">
+    <img alt="Python" src="https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white">
+  </a>
+  <a href="https://fastapi.tiangolo.com/">
+    <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
+  </a>
+  <a href="https://github.com/facebookresearch/faiss">
+    <img alt="FAISS" src="https://img.shields.io/badge/FAISS-Meta-orange">
+  </a>
+  <a href="https://docs.pydantic.dev/">
+    <img alt="Pydantic" src="https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white">
+  </a>
+  <a href="https://platform.openai.com/">
+    <img alt="OpenAI SDK" src="https://img.shields.io/badge/OpenAI%20SDK-74aa9c?logo=openai&logoColor=white">
+  </a>
+  <a href="https://modelcontextprotocol.io/">
+    <img alt="MCP" src="https://img.shields.io/badge/MCP-Model%20Context%20Protocol-purple">
+  </a>
+  <a href="LICENSE">
+    <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
+  </a>
+</p>
+
+<p align="center">
+  <a href="README_zh.md">📖 中文文档</a>
+  •
+  <a href="CHANGELOG.md">📝 Changelog</a>
+</p>
+
+<p align="center">
+  RepoMind is a <b>code-aware RAG system</b> for repository understanding.
+</p>
+
+<p align="center">
+  It helps AI and developers efficiently explore unfamiliar codebases with <b>token-efficient approaches</b>,
+  specifically designed for <b>relatively static and niche codebases</b>.
+</p>
+
+---
+
+<p align="center">
+  <a href="#-project-overview">Overview</a>
+  •
+  <a href="#-problem--use-cases">Use Cases</a>
+  •
+  <a href="#-core-features">Features</a>
+  •
+  <a href="#-technical-highlights">Highlights</a>
+  •
+  <a href="#-system-architecture">Architecture</a>
+  •
+  <a href="#-quick-start">Quick Start</a>
+  •
+  <a href="#-core-modules">Modules</a>
+  •
+  <a href="#-evaluation-metrics">Metrics</a>
+  •
   <a href="#-baseline-results">Results</a>
 </p>
 

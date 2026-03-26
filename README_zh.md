@@ -1,29 +1,65 @@
-# RepoMind
-
-[![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![FAISS](https://img.shields.io/badge/FAISS-Meta-orange)](https://github.com/facebookresearch/faiss)
-[![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
-[![OpenAI](https://img.shields.io/badge/OpenAI%20SDK-74aa9c?logo=openai&logoColor=white)](https://platform.openai.com/)
-[![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-purple)](https://modelcontextprotocol.io/)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-
-> 📖 **English Documentation**: [README.md](README.md)
-> 📝 **更新记录**: [CHANGELOG.md](CHANGELOG.md)
-
-代码感知的 RAG（检索增强生成）系统，用于仓库理解。RepoMind 帮助 AI 和开发者以高效（节省 Token）的方式探索不熟悉的代码库。
+<h1 align="center">RepoMind</h1>
 
 ---
 
 <p align="center">
-  <a href="#-项目概述">概述</a> •
-  <a href="#-问题与场景">场景</a> •
-  <a href="#-核心特性">特性</a> •
-  <a href="#-技术亮点">亮点</a> •
-  <a href="#-系统架构">架构</a> •
-  <a href="#-快速开始">快速开始</a> •
-  <a href="#-核心模块">模块</a> •
-  <a href="#-评估指标">指标</a> •
+  <a href="https://www.python.org/">
+    <img alt="Python" src="https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white">
+  </a>
+  <a href="https://fastapi.tiangolo.com/">
+    <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
+  </a>
+  <a href="https://github.com/facebookresearch/faiss">
+    <img alt="FAISS" src="https://img.shields.io/badge/FAISS-Meta-orange">
+  </a>
+  <a href="https://docs.pydantic.dev/">
+    <img alt="Pydantic" src="https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white">
+  </a>
+  <a href="https://platform.openai.com/">
+    <img alt="OpenAI SDK" src="https://img.shields.io/badge/OpenAI%20SDK-74aa9c?logo=openai&logoColor=white">
+  </a>
+  <a href="https://modelcontextprotocol.io/">
+    <img alt="MCP" src="https://img.shields.io/badge/MCP-Model%20Context%20Protocol-purple">
+  </a>
+  <a href="LICENSE">
+    <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
+  </a>
+</p>
+
+<p align="center">
+  <a href="README.md">📖 English Documentation</a>
+  •
+  <a href="CHANGELOG.md">📝 更新记录</a>
+</p>
+
+<p align="center">
+  RepoMind 是一个 <b>代码感知的 RAG 系统</b>，用于仓库理解。
+</p>
+
+<p align="center">
+  它帮助 AI 和开发者以 <b>高效（节省 Token）的方式</b>探索不熟悉的代码库，
+  专门设计用于处理 <b>相对静态且冷门的代码库</b>。
+</p>
+
+---
+
+<p align="center">
+  <a href="#-项目概述">概述</a>
+  •
+  <a href="#-问题与场景">场景</a>
+  •
+  <a href="#-核心特性">特性</a>
+  •
+  <a href="#-技术亮点">亮点</a>
+  •
+  <a href="#-系统架构">架构</a>
+  •
+  <a href="#-快速开始">快速开始</a>
+  •
+  <a href="#-核心模块">模块</a>
+  •
+  <a href="#-评估指标">指标</a>
+  •
   <a href="#-基线测试结果">结果</a>
 </p>
 
