@@ -49,7 +49,7 @@
   •
   <a href="#-use-cases">Use Cases</a>
   •
-  <a href="#-technical-highlights">Highlights</a>
+  <a href="#-technical-highlights">Deep Dive</a>
   •
   <a href="#-system-architecture">Architecture</a>
   •
@@ -98,7 +98,7 @@ See [full baseline results](#-baseline-results) below for detailed metrics.
 - **Large Repo Exploration**: Efficiently navigate and understand internal tools or niche open-source projects without sending entire files to LLMs
 - **Team Knowledge Base**: Help new team members onboard faster by answering codebase questions with grounded, verifiable answers
 
-## 🔧 Technical Highlights
+## 🔧 Deep Dive
 
 ### 1. Chunker Design: Multi-level Chunking
 **Challenge**: Balancing granularity and context for optimal retrieval
