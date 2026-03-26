@@ -54,25 +54,3 @@ class MetadataFilter:
 
         ext = chunk.file_path[chunk.file_path.rfind("."):].lower()
         return ext in preferred_extensions
-
-    def _keyword_match_score(self, chunk: CodeChunk, query_lower: str) -> float:
-        """Calculate keyword match score between chunk and query."""
-        score = 0.0
-        file_path_lower = chunk.file_path.lower()
-
-        if query_lower in file_path_lower:
-            score += 0.5
-
-        if chunk.function_name and chunk.function_name.lower() in query_lower:
-            score += 0.3
-
-        if chunk.class_name and chunk.class_name.lower() in query_lower:
-            score += 0.3
-
-        content_lower = chunk.content.lower()
-        query_words = query_lower.split()
-        matches = sum(1 for word in query_words if len(word) > 2 and word in content_lower)
-        if query_words:
-            score += min(0.4, matches * 0.1)
-
-        return score

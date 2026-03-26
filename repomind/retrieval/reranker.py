@@ -24,6 +24,20 @@ class Reranker:
         "什么", "怎么", "如何", "为什么", "哪", "哪里",
     }
 
+    # Keyword scoring constants
+    KEYWORD_FILE_PATH_BOOST = 0.3
+    KEYWORD_FUNC_NAME_MATCH = 0.25
+    KEYWORD_FUNC_NAME_CONTAINS = 0.25
+    KEYWORD_CLASS_NAME_MATCH = 0.25
+    KEYWORD_CLASS_NAME_CONTAINS = 0.25
+    KEYWORD_BIGRAM_MATCH_PER = 0.04
+    KEYWORD_BIGRAM_MAX = 0.2
+    KEYWORD_TRIGRAM_MATCH_PER = 0.05
+    KEYWORD_TRIGRAM_MAX = 0.2
+    KEYWORD_ENGLISH_WORD_MATCH_PER = 0.1
+    KEYWORD_ENGLISH_MAX = 0.4
+    KEYWORD_MAX_SCORE = 1.0
+
     def __init__(
         self,
         alpha: float = 0.85,
@@ -32,7 +46,7 @@ class Reranker:
         doc_bias: float = 0.05,
         min_doc_count: int = 1,
         min_code_count: int = 1,
-        embedding_service=None,  # Optional: for semantic similarity
+        embedding_service=None,
     ):
         self.alpha = alpha
         self.beta = beta
@@ -115,21 +129,21 @@ class Reranker:
         file_path_lower = chunk.file_path.lower()
 
         if query_lower in file_path_lower:
-            score += 0.3
+            score += self.KEYWORD_FILE_PATH_BOOST
 
         if chunk.function_name:
             func_name_lower = chunk.function_name.lower()
             if func_name_lower in query_lower:
-                score += 0.25
+                score += self.KEYWORD_FUNC_NAME_MATCH
             if query_lower in func_name_lower:
-                score += 0.25
+                score += self.KEYWORD_FUNC_NAME_CONTAINS
 
         if chunk.class_name:
             class_name_lower = chunk.class_name.lower()
             if class_name_lower in query_lower:
-                score += 0.25
+                score += self.KEYWORD_CLASS_NAME_MATCH
             if query_lower in class_name_lower:
-                score += 0.25
+                score += self.KEYWORD_CLASS_NAME_CONTAINS
 
         content_lower = chunk.content.lower()
 
@@ -153,7 +167,7 @@ class Reranker:
                 content_bigrams = get_ngrams(content_lower, 2)
                 bigram_matches = sum(1 for bg in content_bigrams if bg in query_bigrams)
                 if bigram_matches > 0:
-                    score += min(0.2, bigram_matches * 0.04)  # 2-gram 最高加 0.2
+                    score += min(self.KEYWORD_BIGRAM_MAX, bigram_matches * self.KEYWORD_BIGRAM_MATCH_PER)
 
             # 3-gram 匹配
             query_trigrams = set(get_ngrams(query_lower, 3))
@@ -166,16 +180,16 @@ class Reranker:
                 content_trigrams = get_ngrams(content_lower, 3)
                 trigram_matches = sum(1 for tg in content_trigrams if tg in query_trigrams)
                 if trigram_matches > 0:
-                    score += min(0.2, trigram_matches * 0.05)  # 3-gram 最高加 0.2
+                    score += min(self.KEYWORD_TRIGRAM_MAX, trigram_matches * self.KEYWORD_TRIGRAM_MATCH_PER)
         else:
             # 英文：保持原有逻辑
             query_words = [word for word in query_lower.split() if len(word) > 2]
 
             if query_words:
                 matches = sum(1 for word in query_words if word in content_lower)
-                score += min(0.4, matches * 0.1)
+                score += min(self.KEYWORD_ENGLISH_MAX, matches * self.KEYWORD_ENGLISH_WORD_MATCH_PER)
 
-        return min(1.0, score)
+        return min(self.KEYWORD_MAX_SCORE, score)
 
     def _combine_scores(
         self,
@@ -213,19 +227,40 @@ class Reranker:
         doc_sorted = sorted(doc_scored, key=lambda x: x[1], reverse=True)
         code_sorted = sorted(code_scored, key=lambda x: x[1], reverse=True)
 
-        # Step 1: Guarantee minimum doc chunks (with MMR within doc bucket)
+        # Step 1: Guarantee minimum doc chunks
+        selected, seen_files = self._guarantee_docs(
+            doc_sorted, selected, seen_files
+        )
+
+        # Step 2: Guarantee minimum code chunks
+        selected, seen_files = self._guarantee_code(
+            code_sorted, selected, seen_files
+        )
+
+        # Step 3: Fill remaining slots
+        selected = self._fill_remaining_slots(
+            doc_sorted, code_sorted, selected, seen_files, final_k
+        )
+
+        return selected
+
+    def _guarantee_docs(
+        self,
+        doc_sorted: List[Tuple[CodeChunk, float]],
+        selected: List[Tuple[CodeChunk, float]],
+        seen_files: Set[str]
+    ) -> Tuple[List[Tuple[CodeChunk, float]], Set[str]]:
+        """Guarantee minimum document chunks with MMR diversity."""
         doc_guaranteed = 0
         doc_remaining = doc_sorted.copy()
+
         while doc_guaranteed < self.min_doc_count and doc_remaining:
-            # Use MMR to select diverse docs
             if doc_guaranteed == 0:
-                # Pick first one
                 chunk, score = doc_remaining[0]
             else:
-                # Use MMR to pick next diverse doc
                 mmr_selection = self._mmr_select(
                     [(c, s) for c, s in doc_remaining if self._get_file_key(c) not in seen_files],
-                    query="",  # No query needed for bucket-internal MMR
+                    query="",
                     k=1,
                     lambda_=self.lambda_,
                     already_selected=selected
@@ -239,22 +274,27 @@ class Reranker:
                 selected.append((chunk, score))
                 seen_files.add(file_key)
                 doc_guaranteed += 1
-                # Remove from remaining
                 doc_remaining = [(c, s) for c, s in doc_remaining if c is not chunk]
 
-        # Step 2: Guarantee minimum code chunks (with MMR within code bucket)
+        return selected, seen_files
+
+    def _guarantee_code(
+        self,
+        code_sorted: List[Tuple[CodeChunk, float]],
+        selected: List[Tuple[CodeChunk, float]],
+        seen_files: Set[str]
+    ) -> Tuple[List[Tuple[CodeChunk, float]], Set[str]]:
+        """Guarantee minimum code chunks with MMR diversity."""
         code_guaranteed = 0
         code_remaining = code_sorted.copy()
+
         while code_guaranteed < self.min_code_count and code_remaining:
-            # Use MMR to select diverse code
             if code_guaranteed == 0:
-                # Pick first one
                 chunk, score = code_remaining[0]
             else:
-                # Use MMR to pick next diverse code
                 mmr_selection = self._mmr_select(
                     [(c, s) for c, s in code_remaining if self._get_file_key(c) not in seen_files],
-                    query="",  # No query needed for bucket-internal MMR
+                    query="",
                     k=1,
                     lambda_=self.lambda_,
                     already_selected=selected
@@ -268,10 +308,19 @@ class Reranker:
                 selected.append((chunk, score))
                 seen_files.add(file_key)
                 code_guaranteed += 1
-                # Remove from remaining
                 code_remaining = [(c, s) for c, s in code_remaining if c is not chunk]
 
-        # Step 3: Merge remaining candidates for global competition
+        return selected, seen_files
+
+    def _fill_remaining_slots(
+        self,
+        doc_sorted: List[Tuple[CodeChunk, float]],
+        code_sorted: List[Tuple[CodeChunk, float]],
+        selected: List[Tuple[CodeChunk, float]],
+        seen_files: Set[str],
+        final_k: int
+    ) -> List[Tuple[CodeChunk, float]]:
+        """Fill remaining slots with MMR for diversity."""
         remaining: List[Tuple[CodeChunk, float]] = []
         for chunk, score in doc_sorted:
             file_key = self._get_file_key(chunk)
@@ -282,7 +331,6 @@ class Reranker:
             if file_key not in seen_files:
                 remaining.append((chunk, score))
 
-        # Step 4: Fill remaining slots with MMR for diversity
         remaining_slots = final_k - len(selected)
         if remaining_slots > 0 and remaining:
             mmr_selected = self._mmr_select(
@@ -292,7 +340,6 @@ class Reranker:
                 lambda_=self.lambda_,
                 already_selected=selected
             )
-            # Add MMR-selected chunks (but check file uniqueness again)
             for chunk, score in mmr_selected:
                 file_key = self._get_file_key(chunk)
                 if file_key not in seen_files:
@@ -332,7 +379,6 @@ class Reranker:
         if already_selected:
             selected = already_selected.copy()
 
-        # Create a working list (copy so we don't modify original)
         remaining = candidates.copy()
 
         while len(selected) < len(already_selected if already_selected else []) + k and remaining:
@@ -340,10 +386,8 @@ class Reranker:
             best_score = -float("inf")
 
             for chunk, rel_score in remaining:
-                # Calculate relevance (use pre-computed score)
                 relevance = rel_score
 
-                # Calculate diversity penalty: max similarity to already selected
                 max_sim = 0.0
                 if selected:
                     max_sim = max(
@@ -351,7 +395,6 @@ class Reranker:
                         for s_chunk, _ in selected
                     )
 
-                # MMR score
                 mmr_score = lambda_ * relevance - (1 - lambda_) * max_sim
 
                 if mmr_score > best_score:
@@ -360,12 +403,10 @@ class Reranker:
 
             if best_chunk:
                 selected.append(best_chunk)
-                # Remove from remaining
                 remaining = [(c, s) for c, s in remaining if c is not best_chunk[0]]
             else:
                 break
 
-        # Return only the new selections (exclude already_selected)
         if already_selected:
             return selected[len(already_selected):]
         return selected[:k]
@@ -382,25 +423,19 @@ class Reranker:
         - Semantic similarity via embeddings (if embedding_service available)
         - Fallback to text overlap (backward compatibility)
         """
-        # Method 1: Semantic similarity via embeddings (preferred)
         if self.embedding_service:
             try:
-                # Get embedding texts
                 text1 = chunk1.get_embedding_text()
                 text2 = chunk2.get_embedding_text()
 
-                # Embed both
                 embeddings = self.embedding_service.embed_batch([text1, text2])
                 emb1 = embeddings[0]
                 emb2 = embeddings[1]
 
-                # Calculate cosine similarity
                 return self._cosine_similarity(emb1, emb2)
             except Exception:
-                # Fallback to text overlap
                 pass
 
-        # Method 2: Simple text overlap (fallback)
         return self._text_overlap_similarity(chunk1, chunk2)
 
     def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
@@ -419,11 +454,9 @@ class Reranker:
 
     def _text_overlap_similarity(self, chunk1: CodeChunk, chunk2: CodeChunk) -> float:
         """Simple text overlap similarity (fallback when no embeddings)."""
-        # Check if same file
         if self._get_file_key(chunk1) == self._get_file_key(chunk2):
             return 1.0
 
-        # Check function/class name overlap
         names1 = set()
         if chunk1.function_name:
             names1.add(chunk1.function_name.lower())
@@ -441,7 +474,6 @@ class Reranker:
             if name_overlap > 0:
                 return 0.5 + 0.5 * name_overlap
 
-        # Simple content word overlap
         content1 = chunk1.content.lower()
         content2 = chunk2.content.lower()
         words1 = set(content1.split())

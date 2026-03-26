@@ -10,19 +10,29 @@ class SummaryGenerator:
     IMPORTANT: Only uses compressed structured data as input, NEVER full code.
     """
 
-    # Fast model configuration
-    MODEL_ID = "qwen-flash"
-    BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    # Default configuration
+    DEFAULT_MODEL_ID = "qwen-flash"
+    DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     API_KEY_ENV = "QWEN_API_KEY"
 
-    def __init__(self, api_key: Optional[str] = None, save_logs: bool = True, log_dir: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        model: Optional[str] = None,
+        save_logs: bool = True,
+        log_dir: Optional[str] = None
+    ):
         self.api_key = api_key or os.getenv(self.API_KEY_ENV)
         if not self.api_key:
             raise ValueError(f"API key must be provided or set in {self.API_KEY_ENV}")
 
+        self.base_url = base_url or self.DEFAULT_BASE_URL
+        self.model = model or self.DEFAULT_MODEL_ID
+
         self.client = OpenAI(
             api_key=self.api_key,
-            base_url=self.BASE_URL
+            base_url=self.base_url
         )
 
         self.save_logs = save_logs
@@ -46,53 +56,21 @@ class SummaryGenerator:
         system_prompt = "You are a code analysis assistant. Output only valid JSON."
         user_prompt = self._build_function_summary_prompt(structured_data)
 
-        generation_log = {
-            "chunk_type": "function",
-            "structured_data": structured_data,
-            "system_prompt": system_prompt,
-            "user_prompt": user_prompt,
-            "raw_output": None,
-            "summary": None,
-            "success": False,
-            "error": None
-        }
+        def process_output(content: str) -> Optional[str]:
+            try:
+                result = json.loads(content)
+                return self._format_summary_from_json(result)
+            except json.JSONDecodeError:
+                return content.strip() if content else None
 
-        try:
-            response = self.client.chat.completions.create(
-                model=self.MODEL_ID,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.3,
-                max_tokens=500
-            )
-
-            content = response.choices[0].message.content
-            generation_log["raw_output"] = content
-
-            if content:
-                # Parse JSON response
-                try:
-                    result = json.loads(content)
-                    summary = self._format_summary_from_json(result)
-                    generation_log["summary"] = summary
-                    generation_log["success"] = True
-                    self._save_generation_log(generation_log)
-                    return summary, generation_log
-                except json.JSONDecodeError:
-                    # Fallback: return raw content if JSON parsing fails
-                    summary = content.strip()
-                    generation_log["summary"] = summary
-                    generation_log["success"] = True
-                    self._save_generation_log(generation_log)
-                    return summary, generation_log
-
-        except Exception as e:
-            print(f"Warning: Failed to generate function summary: {e}")
-            generation_log["error"] = str(e)
-            self._save_generation_log(generation_log)
-            return None, generation_log
+        return self._generate_summary(
+            chunk_type="function",
+            structured_data=structured_data,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=500,
+            process_output_fn=process_output
+        )
 
     def generate_class_summary(self, structured_data: Dict[str, Any]) -> Tuple[Optional[str], Dict[str, Any]]:
         """
@@ -107,43 +85,14 @@ class SummaryGenerator:
         system_prompt = "You are a code analysis assistant."
         user_prompt = self._build_class_summary_prompt(structured_data)
 
-        generation_log = {
-            "chunk_type": "class",
-            "structured_data": structured_data,
-            "system_prompt": system_prompt,
-            "user_prompt": user_prompt,
-            "raw_output": None,
-            "summary": None,
-            "success": False,
-            "error": None
-        }
-
-        try:
-            response = self.client.chat.completions.create(
-                model=self.MODEL_ID,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.3,
-                max_tokens=400
-            )
-
-            content = response.choices[0].message.content
-            generation_log["raw_output"] = content
-
-            if content:
-                summary = content.strip()
-                generation_log["summary"] = summary
-                generation_log["success"] = True
-                self._save_generation_log(generation_log)
-                return summary, generation_log
-
-        except Exception as e:
-            print(f"Warning: Failed to generate class summary: {e}")
-            generation_log["error"] = str(e)
-            self._save_generation_log(generation_log)
-            return None, generation_log
+        return self._generate_summary(
+            chunk_type="class",
+            structured_data=structured_data,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=400,
+            process_output_fn=lambda c: c.strip() if c else None
+        )
 
     def generate_file_summary(self, structured_data: Dict[str, Any]) -> Tuple[Optional[str], Dict[str, Any]]:
         """
@@ -158,8 +107,84 @@ class SummaryGenerator:
         system_prompt = "You are a code analysis assistant."
         user_prompt = self._build_file_summary_prompt(structured_data)
 
-        generation_log = {
-            "chunk_type": "file",
+        return self._generate_summary(
+            chunk_type="file",
+            structured_data=structured_data,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=300,
+            process_output_fn=lambda c: c.strip() if c else None
+        )
+
+    def _generate_summary(
+        self,
+        chunk_type: str,
+        structured_data: Dict[str, Any],
+        system_prompt: str,
+        user_prompt: str,
+        max_tokens: int,
+        process_output_fn
+    ) -> Tuple[Optional[str], Dict[str, Any]]:
+        """
+        Template method for generating summaries - handles common logic.
+
+        Args:
+            chunk_type: Type of chunk ("function", "class", "file")
+            structured_data: Structured data for the chunk
+            system_prompt: System prompt for LLM
+            user_prompt: User prompt for LLM
+            max_tokens: Max tokens for completion
+            process_output_fn: Function to process raw LLM output
+
+        Returns:
+            Tuple of (summary string or None, generation_log dict)
+        """
+        generation_log = self._build_generation_log(
+            chunk_type=chunk_type,
+            structured_data=structured_data,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt
+        )
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.3,
+                max_tokens=max_tokens
+            )
+
+            content = response.choices[0].message.content
+            generation_log["raw_output"] = content
+
+            if content:
+                summary = process_output_fn(content)
+                generation_log["summary"] = summary
+                generation_log["success"] = True
+                self._save_generation_log(generation_log)
+                return summary, generation_log
+
+        except Exception as e:
+            print(f"Warning: Failed to generate {chunk_type} summary: {e}")
+            generation_log["error"] = str(e)
+            self._save_generation_log(generation_log)
+            return None, generation_log
+
+        return None, generation_log
+
+    def _build_generation_log(
+        self,
+        chunk_type: str,
+        structured_data: Dict[str, Any],
+        system_prompt: str,
+        user_prompt: str
+    ) -> Dict[str, Any]:
+        """Build a generation log dictionary."""
+        return {
+            "chunk_type": chunk_type,
             "structured_data": structured_data,
             "system_prompt": system_prompt,
             "user_prompt": user_prompt,
@@ -168,33 +193,6 @@ class SummaryGenerator:
             "success": False,
             "error": None
         }
-
-        try:
-            response = self.client.chat.completions.create(
-                model=self.MODEL_ID,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.3,
-                max_tokens=300
-            )
-
-            content = response.choices[0].message.content
-            generation_log["raw_output"] = content
-
-            if content:
-                summary = content.strip()
-                generation_log["summary"] = summary
-                generation_log["success"] = True
-                self._save_generation_log(generation_log)
-                return summary, generation_log
-
-        except Exception as e:
-            print(f"Warning: Failed to generate file summary: {e}")
-            generation_log["error"] = str(e)
-            self._save_generation_log(generation_log)
-            return None, generation_log
 
     def _save_generation_log(self, log: Dict[str, Any]) -> None:
         """Save generation log to memory and optionally to file."""
@@ -287,7 +285,6 @@ Output a concise 1-2 sentence summary of what this module contains and its purpo
         Returns:
             Tuple of (updated chunks list, generation logs list)
         """
-        # For now, process sequentially
         all_logs = []
 
         for chunk in chunks:

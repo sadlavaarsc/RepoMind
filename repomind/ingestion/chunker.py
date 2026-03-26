@@ -9,6 +9,10 @@ from repomind.ingestion.parsers.python_parser import PythonParser
 class Chunker:
     """Orchestrate code chunking for multiple languages."""
 
+    # Markdown chunking constants
+    MIN_CHUNK_LENGTH = 200
+    MAX_CHUNK_LENGTH = 4000
+
     def __init__(self, max_workers: int = 4):
         self.parsers = {
             ".py": PythonParser(),
@@ -150,10 +154,6 @@ class Chunker:
         3. 按最高级+1层级切分（例如最高级是h2则按h3切分，或h1按h2切分）
         4. 自动合并过短的 chunks
         """
-        # 配置参数
-        MIN_CHUNK_LENGTH = 200  # 最小 chunk 长度（字符）
-        MAX_CHUNK_LENGTH = 4000  # 最大 chunk 长度（字符）
-
         lines = content.split('\n')
         chunks = []
 
@@ -183,7 +183,7 @@ class Chunker:
 
         # Phase 4: 合并短 chunks
         merged_chunks = self._merge_short_chunks(
-            initial_chunks, MIN_CHUNK_LENGTH, MAX_CHUNK_LENGTH
+            initial_chunks, self.MIN_CHUNK_LENGTH, self.MAX_CHUNK_LENGTH
         )
 
         return merged_chunks

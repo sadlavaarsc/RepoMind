@@ -30,7 +30,18 @@ class CodeChunk(BaseModel):
         return "::".join(parts)
 
     def summarize_chunk(self) -> Optional[str]:
-        """Placeholder for future LLM-based summarization."""
+        """Placeholder for future LLM-based summarization.
+
+        .. deprecated:: 1.0
+            This method is deprecated and will be removed in a future version.
+            Use the summary field instead.
+        """
+        import warnings
+        warnings.warn(
+            "summarize_chunk() is deprecated, use the summary field instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
         return None
 
     def get_embedding_text(self) -> str:

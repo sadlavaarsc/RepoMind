@@ -6,7 +6,8 @@ This module provides a single, simplified interface to all RepoMind functionalit
 
 import os
 import time
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Callable, TypeVar, Tuple
+from functools import wraps
 from pathlib import Path
 
 from repomind.configs.settings import Settings, get_settings
@@ -21,6 +22,34 @@ from repomind.retrieval.context_packer import ContextPacker
 from repomind.retrieval.pipeline import RetrievalPipeline
 from repomind.generation.llm_service import LLMService
 from repomind.generation.answer_generator import AnswerGenerator
+from repomind.ingestion.summary_generator import SummaryGenerator
+
+
+# Type variable for timing decorator
+T = TypeVar('T')
+
+
+def _timing(timings_dict: Dict[str, float], key: str) -> Callable:
+    """
+    Decorator to measure function execution time and store in timings_dict.
+
+    Args:
+        timings_dict: Dictionary to store timing results (in ms)
+        key: Key to use for storing the timing
+
+    Returns:
+        Decorated function
+    """
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T:
+            start = time.time()
+            result = func(*args, **kwargs)
+            end = time.time()
+            timings_dict[key] = (end - start) * 1000
+            return result
+        return wrapper
+    return decorator
 
 
 class RepoMind:
@@ -91,6 +120,13 @@ class RepoMind:
         self.chunker = Chunker()
         self.vector_store = FAISSStore(embedding_service=self.embedding_service)
 
+        # Summary Generator (for LLM-based chunk summaries)
+        self.summary_generator = SummaryGenerator(
+            api_key=self.settings.qwen_api_key,
+            base_url=self.settings.base_url,
+            model=self.settings.llm_model_fast
+        )
+
         # Query Expander (uses fast LLM if enabled)
         expander_model = self.settings.llm_model_fast if self.use_fast_llm_for_expansion else self.settings.llm_model
         self.query_expander = QueryExpander(
@@ -110,7 +146,12 @@ class RepoMind:
         self.metadata_filter = MetadataFilter()
         self.reranker = Reranker(
             alpha=self.settings.rerank_alpha,
-            beta=self.settings.rerank_beta
+            beta=self.settings.rerank_beta,
+            lambda_=getattr(self.settings, "rerank_lambda", 0.75),
+            doc_bias=getattr(self.settings, "rerank_doc_bias", 0.05),
+            min_doc_count=getattr(self.settings, "rerank_min_doc_count", 1),
+            min_code_count=getattr(self.settings, "rerank_min_code_count", 1),
+            embedding_service=self.embedding_service,
         )
         self.context_packer = ContextPacker(
             max_tokens=self.settings.max_context_tokens
@@ -146,7 +187,12 @@ class RepoMind:
         chunks = self.chunker.chunk_repository(repo_path)
 
         if chunks:
-            texts = [chunk.content for chunk in chunks]
+            # Generate LLM summaries for chunks
+            print(f"Generating LLM summaries for {len(chunks)} chunks...")
+            chunks, _ = self.summary_generator.batch_generate_summaries(chunks)
+
+            # Embed using the enhanced text (with structured data and summaries)
+            texts = [chunk.get_embedding_text() for chunk in chunks]
             embeddings = self.embedding_service.embed_batch(texts)
             self.vector_store.add(chunks, embeddings)
 
@@ -235,81 +281,15 @@ class RepoMind:
         timings = {}
 
         # Step 1: Query Classification (if enabled)
-        query_type = "complex"
-        if self.enable_query_classification:
-            t0 = time.time()
-            query_type = self.query_classifier.classify(question)
-            t1 = time.time()
-            timings["query_classification"] = (t1 - t0) * 1000
+        query_type = self._classify_query(question, timings)
 
         # Step 2: Retrieval
-        t2 = time.time()
-
-        if self.enable_query_expansion:
-            # Use retrieval pipeline with query expansion
-            # Create a temporary pipeline for this query with the right number of variants
-            expanded_queries = self.query_expander.expand(question, num_variants=self.query_expansion_variants)
-
-            embedding_time = 0.0
-            search_time = 0.0
-            all_results = []
-            seen = set()
-
-            for exp_query in expanded_queries:
-                t_emb = time.time()
-                query_embedding = self.embedding_service.embed(exp_query)
-                t_emb2 = time.time()
-                embedding_time += (t_emb2 - t_emb) * 1000
-
-                t_search = time.time()
-                results = self.vector_store.search(query_embedding, top_k=self.settings.retrieval_top_k)
-                t_search2 = time.time()
-                search_time += (t_search2 - t_search) * 1000
-
-                for chunk, score in results:
-                    chunk_id = chunk.get_identifier()
-                    if chunk_id not in seen:
-                        seen.add(chunk_id)
-                        all_results.append((chunk, score))
-
-            all_results.sort(key=lambda x: x[1], reverse=True)
-            timings["query_expansion"] = embedding_time + search_time  # Simplified timing
-
-            filtered = self.metadata_filter.filter(all_results, question)
-            reranked = self.reranker.rerank(filtered, question)
-            chunks = self.context_packer.pack(reranked, final_k=self.settings.retrieval_final_k)
-        else:
-            # Simple single-query retrieval
-            t_emb = time.time()
-            query_embedding = self.embedding_service.embed(question)
-            t_emb2 = time.time()
-            timings["embedding"] = (t_emb2 - t_emb) * 1000
-
-            t_search = time.time()
-            results = self.vector_store.search(query_embedding, top_k=self.settings.retrieval_top_k)
-            t_search2 = time.time()
-            timings["vector_search"] = (t_search2 - t_search) * 1000
-
-            chunks = [chunk for chunk, _ in results[:self.settings.retrieval_final_k]]
-
-        t3 = time.time()
-        timings["retrieval_total"] = (t3 - t2) * 1000
+        chunks, retrieval_timings = self._execute_retrieval(question)
+        timings.update(retrieval_timings)
 
         # Step 3: Answer Generation
-        t4 = time.time()
-
-        use_fast_for_answer = False
-        if self.use_hybrid_answer_generation and self.enable_query_classification:
-            use_fast_for_answer = query_type == "simple"
-
-        result = self.answer_generator.generate(
-            question,
-            chunks,
-            use_fast_model=use_fast_for_answer
-        )
-
-        t5 = time.time()
-        timings["answer_generation"] = (t5 - t4) * 1000
+        result, generation_time = self._generate_answer(question, chunks, query_type)
+        timings["answer_generation"] = generation_time
 
         end_time = time.time()
         total_latency = (end_time - start_time) * 1000
@@ -327,6 +307,153 @@ class RepoMind:
             "model_used": result.get("model_used", "strong"),
             "detailed_timings": timings
         }
+
+    def _classify_query(self, question: str, timings: Dict[str, float]) -> str:
+        """
+        Classify query as simple or complex (if enabled).
+
+        Args:
+            question: User question
+            timings: Dictionary to store timing results
+
+        Returns:
+            Query type ("simple" or "complex")
+        """
+        query_type = "complex"
+        if self.enable_query_classification:
+            t0 = time.time()
+            query_type = self.query_classifier.classify(question)
+            t1 = time.time()
+            timings["query_classification"] = (t1 - t0) * 1000
+        return query_type
+
+    def _execute_retrieval(self, question: str) -> Tuple[List, Dict[str, float]]:
+        """
+        Execute retrieval with or without query expansion.
+
+        Args:
+            question: User question
+
+        Returns:
+            Tuple of (retrieved chunks, timing dictionary)
+        """
+        t2 = time.time()
+        timings = {}
+
+        if self.enable_query_expansion:
+            chunks, retrieval_timings = self._perform_retrieval_with_expansion(question)
+            timings.update(retrieval_timings)
+        else:
+            chunks, retrieval_timings = self._perform_simple_retrieval(question)
+            timings.update(retrieval_timings)
+
+        t3 = time.time()
+        timings["retrieval_total"] = (t3 - t2) * 1000
+        return chunks, timings
+
+    def _perform_retrieval_with_expansion(self, question: str) -> Tuple[List, Dict[str, float]]:
+        """
+        Perform retrieval with query expansion.
+
+        Args:
+            question: User question
+
+        Returns:
+            Tuple of (retrieved chunks, timing dictionary)
+        """
+        timings = {}
+
+        expanded_queries = self.query_expander.expand(question, num_variants=self.query_expansion_variants)
+
+        num_variants = len(expanded_queries)
+        adjusted_top_k = self.settings.retrieval_top_k * min(2, num_variants)
+        adjusted_final_k = self.settings.retrieval_final_k * min(2, num_variants)
+
+        embedding_time = 0.0
+        search_time = 0.0
+        all_results = []
+        seen = set()
+
+        for exp_query in expanded_queries:
+            t_emb = time.time()
+            query_embedding = self.embedding_service.embed(exp_query)
+            t_emb2 = time.time()
+            embedding_time += (t_emb2 - t_emb) * 1000
+
+            t_search = time.time()
+            results = self.vector_store.search(query_embedding, top_k=adjusted_top_k)
+            t_search2 = time.time()
+            search_time += (t_search2 - t_search) * 1000
+
+            for chunk, score in results:
+                chunk_id = chunk.get_identifier()
+                if chunk_id not in seen:
+                    seen.add(chunk_id)
+                    all_results.append((chunk, score))
+
+        all_results.sort(key=lambda x: x[1], reverse=True)
+        timings["query_expansion"] = embedding_time + search_time
+
+        filtered = self.metadata_filter.filter(all_results, question)
+        reranked = self.reranker.rerank(filtered, question)
+        chunks = self.context_packer.pack(reranked, final_k=adjusted_final_k)
+
+        return chunks, timings
+
+    def _perform_simple_retrieval(self, question: str) -> Tuple[List, Dict[str, float]]:
+        """
+        Perform simple single-query retrieval without expansion.
+
+        Args:
+            question: User question
+
+        Returns:
+            Tuple of (retrieved chunks, timing dictionary)
+        """
+        timings = {}
+
+        t_emb = time.time()
+        query_embedding = self.embedding_service.embed(question)
+        t_emb2 = time.time()
+        timings["embedding"] = (t_emb2 - t_emb) * 1000
+
+        t_search = time.time()
+        results = self.vector_store.search(query_embedding, top_k=self.settings.retrieval_top_k)
+        t_search2 = time.time()
+        timings["vector_search"] = (t_search2 - t_search) * 1000
+
+        chunks = [chunk for chunk, _ in results[:self.settings.retrieval_final_k]]
+
+        return chunks, timings
+
+    def _generate_answer(self, question: str, chunks: List, query_type: str) -> Tuple[Dict[str, Any], float]:
+        """
+        Generate answer from retrieved chunks.
+
+        Args:
+            question: User question
+            chunks: Retrieved chunks
+            query_type: Query classification result
+
+        Returns:
+            Tuple of (result dict, generation time in ms)
+        """
+        t4 = time.time()
+
+        use_fast_for_answer = False
+        if self.use_hybrid_answer_generation and self.enable_query_classification:
+            use_fast_for_answer = query_type == "simple"
+
+        result = self.answer_generator.generate(
+            question,
+            chunks,
+            use_fast_model=use_fast_for_answer
+        )
+
+        t5 = time.time()
+        generation_time = (t5 - t4) * 1000
+
+        return result, generation_time
 
     @property
     def is_indexed(self) -> bool:
