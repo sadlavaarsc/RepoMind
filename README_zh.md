@@ -33,11 +33,11 @@
 </p>
 
 <p align="center">
-  一个 <b>节省 Token 的代码感知 RAG 系统</b>，用于仓库理解。
+  一个 <b>大幅节省 Token 的代码感知 RAG 系统</b>，专用于代码仓库理解。
 </p>
 
 <p align="center">
-  在大型代码库上相比 naive RAG 节省 ~80% Token，同时保持相当的准确率。
+  在大型代码库上相比朴素 RAG 节省 ~80% Token，同时保持相当的准确率。
 </p>
 
 ---
@@ -68,12 +68,12 @@
 
 ## 🔥 亮点
 
-- **多级代码分块**：基于 AST 的 file/class/function/block 多级分块，带结构化数据提取
+- **特化代码分块**：基于 AST 的 file/class/function/block 多级分块，带结构化数据提取
 - **LLM 摘要生成**：建库时自动为每个 chunk 生成 LLM 摘要，提升检索质量
-- **中文优化**：2-gram + 3-gram 匹配，无意义代词排除
-- **Token 效率**：大型仓库相比 naive RAG 节省 ~80% Token（14100 → 1634 tokens）
-- **双模型策略**：简单问题用 fast 模型，复杂问题用 strong 模型
-- **MCP 支持**：Model Context Protocol 支持，轻松接入 AI 工具
+- **中文优化**：n-gram 匹配，无意义代词排除
+- **Token 效率**：大型仓库相比未专项优化的 RAG 节省 ~80% Token（14100 → 1634 tokens）
+- **双模型策略**：简单问题用 fast 模型，复杂问题用 strong 模型，保证正确率的同时优化成本与时延
+- **MCP 支持**：Model Context Protocol 支持，方便接入 AI 工具
 
 ## 📊 性能 / 核心洞察
 
@@ -297,7 +297,7 @@ conda activate agentEnv && python scripts/start_mcp_server.py
   "mcpServers": {
     "repomind": {
       "command": "conda",
-      "args": ["run", "-n", "agentEnv", "python", "/path/to/RepoMind/scripts/start_mcp_server.py"]
+      "args": ["run", "-n", "RepoMind", "python", "/path/to/RepoMind/scripts/start_mcp_server.py"]
     }
   }
 }
@@ -307,13 +307,11 @@ conda activate agentEnv && python scripts/start_mcp_server.py
 
 详见 [docs/MODULES_zh.md](docs/MODULES_zh.md)。
 
-## 📊 评估指标
-
-详见 [docs/METRICS_zh.md](docs/METRICS_zh.md)。
-
 ## 📈 基线测试结果
 
 ### 测试项目
+
+评估指标详见 [docs/METRICS_zh.md](docs/METRICS_zh.md)，测试的项目如下：
 
 1. **travel_agent**（小项目）：基于 LLM 的旅行助手 Agent ( 见 `测试仓库/` )
 2. **cuezero**（中大型项目）：高性能台球 AI 系统（https://github.com/sadlavaarsc/CueZero）
@@ -323,8 +321,8 @@ conda activate agentEnv && python scripts/start_mcp_server.py
 | 系统 | 特点 |
 |------|------|
 | LLM-only | 无检索（具体文件作为上下文提供，对于过大文件进行了必要截断节约成本） |
-| Naive RAG | 文件级 chunk |
-| Structured RAG | 函数级 chunk |
+| Naive RAG | 无特殊优化的通用实现RAG，为了避免零碎切分导致的召回率下降选择了文件级 chunk |
+| Structured RAG | 完整的建库工作流 + 朴素检索 + 朴素rerank |
 | Full System | 完整优化（qwen3.5-plus） |
 | Full System Fast | 完整优化 + 双模型策略（qwen-flash + qwen3.5-plus） |
 
@@ -347,6 +345,8 @@ conda activate agentEnv && python scripts/start_mcp_server.py
 | structured_rag | 0.400 | 0.900 | 70.0% | 70.0% | 1.70 | 2.00 | 3420 | 20691.7 |
 | full_system | 0.450 | 1.000 | 100.0% | 80.0% | 1.70 | 2.00 | 2313 | 48915.8 |
 | full_system_fast | 0.450 | 1.000 | 100.0% | 90.0% | 1.80 | 2.00 | 1634 | 14342.8 |
+
+出于网络原因平均延迟可能略高，实际表现可根据实际业务情况以及llm_only的数值进行参考，此处只做比较性质展示。
 
 ---
 
