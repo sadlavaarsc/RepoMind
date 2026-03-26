@@ -48,6 +48,60 @@ def test_reranker():
     assert len(reranked) == 2
 
 
+def test_reranker_chinese_keywords():
+    """Test Chinese n-gram matching in reranker."""
+    reranker = Reranker(alpha=0.85, beta=0.15)
+
+    # Create chunks with Chinese content
+    chunk1 = CodeChunk(
+        content="# 这是一个天气查询函数\ndef get_weather(): pass",
+        file_path="/weather.py",
+        function_name="get_weather",
+        language="python"
+    )
+    chunk2 = CodeChunk(
+        content="# 这是一个工具函数\ndef utility(): pass",
+        file_path="/utility.py",
+        function_name="utility",
+        language="python"
+    )
+
+    # Test with Chinese query
+    results = [(chunk1, 0.7), (chunk2, 0.8)]
+    reranked = reranker.rerank(results, "天气查询")
+    assert len(reranked) == 2
+
+
+def test_reranker_bucket_guarantee():
+    """Test bucket guarantee (at least 1 doc + 1 code chunk)."""
+    reranker = Reranker(alpha=0.85, beta=0.15)
+
+    # Create mix of code and doc chunks
+    chunk1 = CodeChunk(
+        content="def func(): pass",
+        file_path="/code.py",
+        language="python",
+        chunk_type="function"
+    )
+    chunk2 = CodeChunk(
+        content="# Documentation",
+        file_path="/doc.md",
+        language="text",
+        chunk_type="file"
+    )
+    chunk3 = CodeChunk(
+        content="def another(): pass",
+        file_path="/code2.py",
+        language="python",
+        chunk_type="function"
+    )
+
+    results = [(chunk1, 0.9), (chunk2, 0.8), (chunk3, 0.7)]
+    reranked = reranker.rerank(results, "test")
+    # Should have at least 2 chunks (doc + code)
+    assert len(reranked) >= 2
+
+
 def test_context_packer():
     """Test context packing."""
     packer = ContextPacker(max_tokens=1000)

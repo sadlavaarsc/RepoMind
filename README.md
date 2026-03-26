@@ -1,103 +1,223 @@
 # RepoMind
 
-代码感知的 RAG（检索增强生成）系统，用于仓库理解。
+[![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![FAISS](https://img.shields.io/badge/FAISS-Meta-orange)](https://github.com/facebookresearch/faiss)
+[![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
+[![OpenAI](https://img.shields.io/badge/OpenAI%20SDK-74aa9c?logo=openai&logoColor=white)](https://platform.openai.com/)
+[![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-purple)](https://modelcontextprotocol.io/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-## 项目概述
+> 📖 **中文文档**: [README_zh.md](README_zh.md)
 
-RepoMind 是一个模块化的代码仓库理解系统，使用 RAG 技术来回答关于代码仓库的问题。
+A code-aware RAG (Retrieval-Augmented Generation) system for repository understanding. RepoMind helps AI and developers efficiently explore unfamiliar codebases with token-efficient approaches.
 
-### 核心特性
+## Table of Contents
 
-- **多级代码感知分块**: 基于 Python AST 的 file/class/function/block 多级分块，带结构化数据提取
-- **LLM 摘要生成**: 建库时自动为每个 chunk 生成 LLM 摘要，提升检索质量
-- **多阶段检索 Pipeline**: 查询扩展 + 向量搜索 + 元数据过滤 + 重排序
-- **中文关键词优化**: 支持中文 2-gram + 3-gram 匹配，无意义代词排除
-- **混合答案生成**: 简单问题用 fast 模型，复杂问题用 strong 模型
-- **可扩展架构**: 向量存储抽象层，便于未来迁移到 Qdrant
-- **FastAPI 服务**: 生产就绪的 API 接口
-- **MCP 服务**: 支持 Model Context Protocol，便于接入其他 AI 工具
+- [Project Overview](#project-overview)
+- [Problem & Use Cases](#problem--use-cases)
+- [Core Features](#core-features)
+- [Technical Highlights](#technical-highlights)
+- [System Architecture](#system-architecture)
+- [Quick Start](#quick-start)
+- [Core Modules](#core-modules)
+- [Evaluation Metrics](#evaluation-metrics)
+- [Baseline Results](#baseline-results)
+- [API Usage](#api-usage)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [Development Progress](#development-progress)
+- [Changelog](#changelog)
 
-## 快速开始
+## Project Overview
 
-### 环境要求
+RepoMind is a modular code repository understanding system that uses RAG technology to answer questions about codebases. It's specifically designed to help with **relatively static and niche codebases**, enabling both AI assistants and developers to understand unfamiliar code efficiently with significant token savings.
+
+## Problem & Use Cases
+
+### The Problem
+- **Static/Niche Codebases**: Documentation is often outdated or missing for internal tools and less popular open-source projects
+- **Token Inefficiency**: Sending entire files to LLMs is expensive and context-limited
+- **Slow Onboarding**: New team members spend hours understanding code structure
+- **AI Context Limitations**: LLMs struggle with large codebases without proper retrieval
+
+### Use Cases
+- **Enterprise Codebase Knowledge Base**: Help teams manage and query internal code repositories, enabling faster onboarding
+- **Open Source Project Assistant**: Help developers quickly understand and use open-source projects
+- **AI-Powered Programming Assistant**: Integrate with IDEs or AI tools to provide code context understanding
+
+## Core Features
+
+- **Multi-level Code-aware Chunking**: Python AST-based file/class/function/block chunking with structured data extraction
+- **LLM Summary Generation**: Automatic LLM summary generation for each chunk during indexing, improving retrieval quality
+- **Multi-stage Retrieval Pipeline**: Query expansion + vector search + metadata filtering + reranking
+- **Chinese Keyword Optimization**: Chinese 2-gram + 3-gram matching with meaningless pronoun exclusion
+- **Hybrid Answer Generation**: Fast model for simple questions, strong model for complex questions
+- **Extensible Architecture**: Vector storage abstraction layer for future migration to Qdrant
+- **FastAPI Service**: Production-ready API interface
+- **MCP Service**: Model Context Protocol support for easy integration with AI tools
+
+## Technical Highlights
+
+### 1. Chunker Design: Multi-level Chunking
+**Challenge**: Balancing granularity and context for optimal retrieval
+
+**Solution**:
+- **File-level**: Whole module overview with imports and top-level structure
+- **Class-level**: Class responsibilities and methods
+- **Function-level**: Function inputs, outputs, and call relationships
+- **Block-level**: Code blocks in script files
+
+**Trade-offs**: Finer granularity improves precision but may lose context; solved with LLM-generated summaries that preserve context while keeping individual chunks focused.
+
+### 2. Reranker Design: Multi-factor Optimization
+**Challenge**: Chinese queries require different handling, and diversity matters in retrieval results
+
+**Solution**:
+- **Chinese n-gram Matching**: 2-gram + 3-gram for better Chinese keyword matching
+- **Meaningless Word Filter**: Exclusion table for Chinese pronouns ("我", "我们", "你", "你们", etc.)
+- **Bucket Guarantee**: At least 1 document chunk + 1 code chunk to ensure diversity
+- **MMR Diversity**: Maximal Marginal Relevance for result diversity
+- **Weight Tuning**: alpha=0.85 (cosine similarity), beta=0.15 (keyword score) - keywords as "icing on the cake"
+
+### 3. Token Efficiency Optimization
+**Challenge**: Reducing token usage while maintaining answer quality
+
+**Solution**:
+- **LLM Summaries**: Use qwen-flash to generate concise summaries instead of sending full code
+- **Dual Model Strategy**: Simple questions use fast model (qwen-flash), complex questions use strong model (qwen3.5-plus)
+- **Structured Data**: Extract imports, signatures, calls instead of using full code
+- **Smart Context Packing**: Prioritize summary > structured data > code
+
+## System Architecture
+
+```mermaid
+graph TD
+    A[Query Input] --> B[Query Expansion<br/>MQE]
+    B --> C[Query Classification<br/>Simple/Complex]
+    C --> D[Multi-stage Retrieval Pipeline]
+
+    subgraph D_Pipeline[Multi-stage Retrieval Pipeline]
+        D1[1. Vector Retrieval<br/>FAISS Top 20]
+        D2[2. Bucket Guarantee<br/>Docs + Code]
+        D3[3. Keyword Scoring<br/>Chinese n-gram]
+        D4[4. MMR Reranking<br/>Diversity]
+        D5[5. Final Selection<br/>Top 5]
+    end
+
+    D --> D1
+    D1 --> D2
+    D2 --> D3
+    D3 --> D4
+    D4 --> D5
+
+    D5 --> E[Context Building]
+
+    subgraph Context[Context Building]
+        E1[Chunk Summary<br/>LLM Generated]
+        E2[Structured Data<br/>imports, signatures, calls]
+        E3[Raw Code<br/>Optional]
+    end
+
+    E --> E1
+    E --> E2
+    E --> E3
+
+    E --> F[Answer Generation<br/>Dual Model Strategy]
+
+    subgraph Gen[Answer Generation]
+        F1[Simple Question<br/>qwen-flash]
+        F2[Complex Question<br/>qwen3.5-plus]
+    end
+
+    C -->|Simple| F1
+    C -->|Complex| F2
+
+    F1 --> G[Answer Output]
+    F2 --> G
+```
+
+## Quick Start
+
+### Environment Requirements
 
 - Python 3.9+
-- Conda 环境: `agentEnv`
+- Conda environment: `agentEnv`
 
-### 安装依赖
+### Installation
 
 ```bash
 conda activate agentEnv
 pip install -r requirements.txt
 ```
 
-### 配置环境变量
+### Configuration
 
-复制 `.env.example` 为 `.env` 并配置：
+Copy `.env.example` to `.env` and configure:
 
 ```bash
 cp .env.example .env
-# 编辑 .env 文件，设置 QWEN_API_KEY
+# Edit .env file, set QWEN_API_KEY
 ```
 
-### 使用核心接口（推荐）
+### Core Interface (Recommended)
 
-直接使用统一的 `RepoMind` 类，提供所有可配置选项：
+Use the unified `RepoMind` class with all configurable options:
 
 ```python
 from repomind import RepoMind
 
-# 初始化（使用默认配置）
+# Initialize with default configuration
 repomind = RepoMind()
 
-# 或自定义配置
+# Or with custom configuration
 repomind = RepoMind(
-    enable_query_expansion=True,      # 启用查询扩展
-    enable_query_classification=True,  # 启用问题分类
-    query_expansion_variants=2,         # 查询扩展变体数量
-    use_fast_llm_for_expansion=True,    # 查询扩展用 fast LLM
-    use_hybrid_answer_generation=True,  # 混合答案生成（简单问题用 fast）
+    enable_query_expansion=True,      # Enable query expansion
+    enable_query_classification=True,  # Enable question classification
+    query_expansion_variants=2,         # Number of query expansion variants
+    use_fast_llm_for_expansion=True,    # Use fast LLM for query expansion
+    use_hybrid_answer_generation=True,  # Hybrid answer generation (fast for simple)
 )
 
-# 索引仓库
+# Index a repository
 repomind.index_repository("/path/to/repo")
 
-# 查询
-result = repomind.query("这个项目是做什么的？")
+# Query
+result = repomind.query("What does this project do?")
 print(result["answer"])
 ```
 
-### 运行 Demo 测试
+### Run Demo
 
 ```bash
 conda activate agentEnv && python scripts/test_core.py
 ```
 
-### 启动 API 服务
+### Start API Service
 
 ```bash
 conda activate agentEnv && uvicorn repomind.api.main:app --reload
 ```
 
-API 文档访问: http://localhost:8000/docs
+API documentation: http://localhost:8000/docs
 
-### 启动 MCP 服务
+### Start MCP Service
 
-RepoMind 支持 MCP (Model Context Protocol)，可以轻松接入 Claude Desktop 等支持 MCP 的 AI 工具：
+RepoMind supports MCP (Model Context Protocol) for easy integration with Claude Desktop and other AI tools:
 
 ```bash
 conda activate agentEnv && python scripts/start_mcp_server.py
 ```
 
-**MCP 工具列表**:
-- `index_repository(repo_path)` - 索引代码仓库
-- `query_repository(question)` - 查询已索引的仓库
-- `get_health()` - 检查服务健康状态
-- `save_index(index_path)` - 保存索引到磁盘
-- `load_index(index_path)` - 从磁盘加载索引
+**MCP Tools**:
+- `index_repository(repo_path)` - Index a code repository
+- `query_repository(question)` - Query an indexed repository
+- `get_health()` - Check service health
+- `save_index(index_path)` - Save index to disk
+- `load_index(index_path)` - Load index from disk
 
-**Claude Desktop 配置示例**:
-在 Claude Desktop 的配置文件中添加：
+**Claude Desktop Configuration**:
+Add to Claude Desktop config:
 ```json
 {
   "mcpServers": {
@@ -109,248 +229,186 @@ conda activate agentEnv && python scripts/start_mcp_server.py
 }
 ```
 
-## 系统架构
+## Core Modules
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         RepoMind 系统架构                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐   │
-│  │   查询输入    │ →  │  查询扩展     │ →  │  查询分类     │   │
-│  │  (Query)     │    │  (MQE)       │    │  (Classifier) │   │
-│  └──────────────┘    └──────────────┘    └──────────────┘   │
-│         ↓                   ↓                   ↓              │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │                  多阶段检索 Pipeline                       │  │
-│  ├──────────────────────────────────────────────────────────┤  │
-│  │  1. 向量检索 (FAISS) → Top 20                           │  │
-│  │  2. 分桶保证 (文档+代码)                                 │  │
-│  │  3. 关键词打分 (中文 n-gram + 无意义词过滤)              │  │
-│  │  4. MMR 重排序 (多样性保证)                              │  │
-│  │  5. 最终选择 (Top 5)                                     │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│         ↓                                                        │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │                  上下文构建                                │  │
-│  ├──────────────────────────────────────────────────────────┤  │
-│  │  - Chunk Summary (LLM 生成)                              │  │
-│  │  - Structured Data (imports, signatures, calls)         │  │
-│  │  - 原始代码 (可选)                                       │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│         ↓                                                        │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │                  答案生成 (双模型策略)                     │  │
-│  ├──────────────────────────────────────────────────────────┤  │
-│  │  简单问题 → qwen-flash (快速)                            │  │
-│  │  复杂问题 → qwen3.5-plus (高质量)                        │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│         ↓                                                        │
-│  ┌──────────────┐                                               │
-│  │   答案输出    │                                               │
-│  │  (Answer)    │                                               │
-│  └──────────────┘                                               │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+### 1. Ingestion
 
-## 核心模块说明
+**Location**: `repomind/ingestion/`
 
-### 1. Ingestion (数据摄入)
+- **chunker.py**: Multi-level code chunker
+  - file level: Whole module overview
+  - class level: Class responsibilities and methods
+  - function level: Function inputs, outputs, and call relationships
+  - block level: Code blocks in script files
 
-**位置**: `repomind/ingestion/`
+- **summary_generator.py**: LLM summary generator
+  - Uses qwen-flash for fast generation
+  - Uses only structured data, not full code
+  - Summary included in embedding text
 
-- **chunker.py**: 多级代码分块器
-  - file 级: 整个模块概览
-  - class 级: 类的职责和方法
-  - function 级: 函数的输入输出和调用关系
-  - block 级: 脚本文件中的代码块
-
-- **summary_generator.py**: LLM 摘要生成器
-  - 使用 qwen-flash 快速生成
-  - 仅用结构化数据，不用完整代码
-  - 摘要内容包含在嵌入文本中
-
-- **models.py**: CodeChunk 数据模型
+- **models.py**: CodeChunk data model
   - chunk_type, name, signature, docstring
   - summary, structured_data
-  - embedding_text (用于嵌入)
+  - embedding_text (for embeddings)
 
-### 2. Retrieval (检索)
+### 2. Retrieval
 
-**位置**: `repomind/retrieval/`
+**Location**: `repomind/retrieval/`
 
-- **pipeline.py**: 多阶段检索 Pipeline
-  - 查询扩展 (MQE)
-  - 向量搜索
-  - 重排序
+- **pipeline.py**: Multi-stage retrieval pipeline
+  - Query expansion (MQE)
+  - Vector search
+  - Reranking
 
-- **query_expander.py**: 查询扩展器
-  - 支持自定义模型
-  - 生成多个查询变体
+- **query_expander.py**: Query expander
+  - Supports custom models
+  - Generates multiple query variants
 
-- **query_classifier.py**: 查询分类器
-  - simple/complex 二分类
-  - 用于双模型策略
+- **query_classifier.py**: Query classifier
+  - simple/complex binary classification
+  - Used for dual model strategy
 
-- **reranker.py**: 重排序器 (最新优化!)
-  - 分桶保证: 至少 1 个文档 + 1 个代码
-  - 中文优化: 2-gram + 3-gram 匹配
-  - 无意义词过滤: 中文代词排除表
-  - MMR 多样性: Maximal Marginal Relevance
-  - 权重调整: alpha=0.85 (余弦), beta=0.15 (关键词)
+- **reranker.py**: Reranker (Latest optimization!)
+  - Bucket guarantee: At least 1 document + 1 code
+  - Chinese optimization: 2-gram + 3-gram matching
+  - Meaningless word filter: Chinese pronoun exclusion table
+  - MMR diversity: Maximal Marginal Relevance
+  - Weight tuning: alpha=0.85 (cosine), beta=0.15 (keywords)
 
-### 3. Generation (答案生成)
+### 3. Generation
 
-**位置**: `repomind/generation/`
+**Location**: `repomind/generation/`
 
-- **answer_generator.py**: 答案生成器
-  - 支持双 LLM Service
-  - 智能选择模型
+- **answer_generator.py**: Answer generator
+  - Supports dual LLM Service
+  - Smart model selection
 
-- **llm_service.py**: LLM 服务封装
-  - OpenAI 兼容接口
-  - 支持自定义 base_url 和 model
+- **llm_service.py**: LLM service wrapper
+  - OpenAI compatible interface
+  - Supports custom base_url and model
 
-### 4. Evaluation (评估)
+### 4. Evaluation
 
-**位置**: `repomind/evaluation/`
+**Location**: `repomind/evaluation/`
 
-- **retrieval_metrics.py**: 检索指标
-  - 召回率 (Recall)
-  - 命中率 (Hit Rate)
-  - 精确率 (Precision)
+- **retrieval_metrics.py**: Retrieval metrics
+  - Recall
+  - Hit Rate
+  - Precision
 
-- **llm_evaluator.py**: LLM 答案评估
-  - 充分性 (Sufficiency)
-  - 正确性 (Correctness)
-  - 事实性 (Grounding)
+- **llm_evaluator.py**: LLM answer evaluation
+  - Sufficiency
+  - Correctness
+  - Grounding
 
-- **llm_metrics.py**: LLM 指标聚合
-  - 可回答率
-  - 端到端成功率
-  - 检索差距
+- **llm_metrics.py**: LLM metrics aggregation
+  - Answerable Rate
+  - End-to-end Success Rate
+  - Retrieval Gap
 
-## 完整基线测试结果 (2026-03-26)
+## Evaluation Metrics
 
-### 测试项目
+### Retrieval Metrics
 
-1. **travel_agent** (小项目): 基于 LLM 的旅行助手 Agent
-2. **cuezero** (中大型项目): 高性能台球 AI 系统
+| Metric | Definition | Formula |
+|--------|------------|---------|
+| **Recall** | Fraction of relevant chunks retrieved | `|Retrieved ∩ Relevant| / |Relevant|` |
+| **Hit Rate** | Fraction of questions with at least one relevant chunk | `1.0 if |Retrieved ∩ Relevant| > 0 else 0.0` |
+| **Precision** | Fraction of retrieved chunks that are relevant | `|Retrieved ∩ Relevant| / |Retrieved|` |
 
-### 测试系统
+All retrieval metrics are calculated at the file level using source file paths. See `repomind/evaluation/retrieval_metrics.py` for implementation details.
 
-| 系统 | 特点 |
-|------|------|
-| LLM-only | 无检索 |
-| Naive RAG | 文件级 chunk |
-| Structured RAG | 函数级 chunk |
-| Full System | 完整优化（qwen3.5-plus） |
-| Full System Fast | 完整优化 + 双模型策略（qwen-flash + qwen3.5-plus） |
+### LLM Evaluation Metrics
 
-### travel_agent 项目结果
+LLM-based evaluation uses qwen-flash to assess answer quality in three dimensions:
 
-| 系统 | 平均召回率 | 平均命中率 | 可回答率 | 端到端成功率 | 平均正确性 | 平均事实性 | 平均总Token | 平均延迟(ms) |
-|------|-----------|-----------|---------|------------|-----------|-----------|-----------|------------|
+| Metric | Scale | Definition |
+|--------|-------|------------|
+| **Sufficiency** | 0-2 | Is the retrieved context sufficient to answer the question?<br/>2 = Fully sufficient, 1 = Partially sufficient, 0 = Not sufficient |
+| **Correctness** | 0-2 | Is the answer correct and complete compared to ground truth?<br/>2 = Correct and complete, 1 = Partially correct, 0 = Incorrect |
+| **Grounding** | 0-2 | Are all claims in the answer supported by the context?<br/>2 = Fully grounded, 1 = Partially grounded, 0 = Not grounded |
+
+See `repomind/evaluation/llm_evaluator.py` for the prompt templates and evaluation logic.
+
+### Aggregate Metrics
+
+| Metric | Definition | Formula |
+|--------|------------|---------|
+| **Answerable Rate** | Fraction of questions with sufficiency == 2 | `count(sufficiency == 2) / N` |
+| **End-to-end Success Rate** | Fraction of questions with correctness == 2 AND grounding == 2 | `count(correctness == 2 AND grounding == 2) / N` |
+| **Retrieval Gap** | Average gap between sufficiency and correctness | `avg(sufficiency - correctness)` |
+| **Avg Sufficiency** | Average sufficiency score across all questions | `sum(sufficiency) / N` |
+| **Avg Correctness** | Average correctness score across all questions | `sum(correctness) / N` |
+| **Avg Grounding** | Average grounding score across all questions | `sum(grounding) / N` |
+
+See `repomind/evaluation/llm_metrics.py` for implementation details.
+
+### Performance Metrics
+
+| Metric | Definition |
+|--------|------------|
+| **Avg Latency** | Average query response time in milliseconds |
+| **Avg Total Token** | Average total tokens consumed per query (prompt + completion) |
+| **Avg Prompt Token** | Average prompt tokens per query |
+| **Avg Completion Token** | Average completion tokens per query |
+
+## Baseline Results
+
+### Test Projects
+
+1. **travel_agent** (small): LLM-based travel assistant agent
+2. **cuezero** (medium-large): High-performance billiards AI system
+
+### Tested Systems
+
+| System | Description |
+|--------|-------------|
+| LLM-only | No retrieval |
+| Naive RAG | File-level chunks |
+| Structured RAG | Function-level chunks |
+| Full System | Full optimization (qwen3.5-plus) |
+| Full System Fast | Full optimization + dual model strategy (qwen-flash + qwen3.5-plus) |
+
+### travel_agent Results
+
+| System | Avg Recall | Avg Hit Rate | Answerable Rate | E2E Success Rate | Avg Correctness | Avg Grounding | Avg Total Token | Avg Latency(ms) |
+|--------|-----------|-----------|---------|------------|-----------|-----------|-----------|------------|
 | llm_only | 0.000 | 0.000 | 0.0% | 40.0% | 2.00 | 0.80 | 3136 | 14463.6 |
 | naive_rag | 1.000 | 1.000 | 90.0% | 100.0% | 2.00 | 2.00 | 3163 | 12789.5 |
 | structured_rag | 0.975 | 1.000 | 80.0% | 100.0% | 2.00 | 2.00 | 2686 | 13869.1 |
 | full_system | 0.975 | 1.000 | 90.0% | 100.0% | 2.00 | 2.00 | 2845 | 37362.6 |
 | full_system_fast | 0.975 | 1.000 | 90.0% | 100.0% | 2.00 | 2.00 | 2502 | 15157.2 |
 
-### cuezero 项目结果
+### cuezero Results
 
-| 系统 | 平均召回率 | 平均命中率 | 可回答率 | 端到端成功率 | 平均正确性 | 平均事实性 | 平均总Token | 平均延迟(ms) |
-|------|-----------|-----------|---------|------------|-----------|-----------|-----------|------------|
+| System | Avg Recall | Avg Hit Rate | Answerable Rate | E2E Success Rate | Avg Correctness | Avg Grounding | Avg Total Token | Avg Latency(ms) |
+|--------|-----------|-----------|---------|------------|-----------|-----------|-----------|------------|
 | llm_only | 0.000 | 0.000 | 0.0% | 50.0% | 2.00 | 1.00 | 3590 | 21760.5 |
 | naive_rag | 0.500 | 1.000 | 100.0% | 100.0% | 2.00 | 2.00 | 14100 | 15034.3 |
 | structured_rag | 0.400 | 0.900 | 70.0% | 70.0% | 1.70 | 2.00 | 3420 | 20691.7 |
 | full_system | 0.450 | 1.000 | 100.0% | 80.0% | 1.70 | 2.00 | 2313 | 48915.8 |
 | full_system_fast | 0.450 | 1.000 | 100.0% | 90.0% | 1.80 | 2.00 | 1634 | 14342.8 |
 
-### 关键改进 (chinese_rerank_fix)
+### Key Improvements (chinese_rerank_fix)
 
-1. **中文关键词匹配优化**
-   - 添加 2-gram + 3-gram 匹配
-   - 无意义代词排除表 ("我", "我们", "你", "你们" 等)
-   - README_zh.md 现在能正确被检索出来了!
+1. **Chinese Keyword Matching Optimization**
+   - Added 2-gram + 3-gram matching
+   - Meaningless pronoun exclusion table ("我", "我们", "你", "你们", etc.)
+   - README_zh.md can now be correctly retrieved!
 
-2. **权重调整**
-   - alpha=0.85 (余弦相似度权重)
-   - beta=0.15 (关键词分数权重)
-   - 关键词分数作为"锦上添花"，不是主要决定因素
+2. **Weight Tuning**
+   - alpha=0.85 (cosine similarity weight)
+   - beta=0.15 (keyword score weight)
+   - Keyword score as "icing on the cake", not the primary factor
 
-3. **分桶保证**
-   - 至少 1 个文档 chunk
-   - 至少 1 个代码 chunk
-   - 确保检索结果的多样性
+3. **Bucket Guarantee**
+   - At least 1 document chunk
+   - At least 1 code chunk
+   - Ensures diversity in retrieval results
 
-## 项目结构
+## API Usage
 
-```
-repomind/
-├── repomind/
-│   ├── ingestion/          # 数据解析与预处理
-│   │   ├── chunker.py      # 多级代码分块器
-│   │   ├── summary_generator.py  # LLM 摘要生成
-│   │   └── models.py       # CodeChunk 数据模型
-│   ├── indexing/           # 嵌入与向量索引
-│   │   └── embedding_service.py
-│   ├── storage/            # 向量存储抽象
-│   │   ├── vector_store.py # 抽象基类
-│   │   └── faiss_store.py  # FAISS 实现
-│   ├── retrieval/          # 多阶段检索 pipeline
-│   │   ├── pipeline.py     # 检索主流程
-│   │   ├── query_expander.py  # 查询扩展
-│   │   ├── query_classifier.py  # 查询分类
-│   │   └── reranker.py     # 重排序器 (中文优化)
-│   ├── generation/         # LLM 答案生成
-│   │   ├── answer_generator.py
-│   │   └── llm_service.py
-│   ├── evaluation/         # 评估指标
-│   │   ├── retrieval_metrics.py
-│   │   ├── llm_evaluator.py
-│   │   ├── llm_metrics.py
-│   │   └── result_parser.py
-│   ├── api/                # FastAPI 服务
-│   │   ├── main.py
-│   │   └── schemas.py
-│   ├── mcp/                # MCP 服务
-│   │   └── server.py
-│   ├── configs/            # 配置管理
-│   │   └── settings.py
-│   ├── baselines/          # 基线系统
-│   │   ├── naive_rag.py
-│   │   ├── structured_rag.py
-│   │   ├── full_system.py
-│   │   └── full_system_fast.py
-│   └── core.py             # RepoMind 核心类
-├── test_suite/             # 测试集
-│   ├── travel_agent/
-│   │   ├── test_questions.json
-│   │   ├── test_questions.md
-│   │   └── expected_sources.json
-│   └── cuezero/
-│       ├── test_questions.json
-│       ├── test_questions.md
-│       └── expected_sources.json
-├── scripts/                # 工具脚本
-│   ├── run_baseline_comparison.py
-│   ├── analyze_baseline_results.py
-│   ├── run_full_llm_eval.py
-│   ├── start_mcp_server.py
-│   └── ...
-├── tests/                  # 测试套件
-│   ├── test_api.py
-│   ├── test_storage.py
-│   └── ...
-├── requirements.txt
-└── README.md
-```
-
-## API 使用
-
-### 索引仓库
+### Index Repository
 
 ```bash
 POST /index
@@ -359,82 +417,145 @@ POST /index
 }
 ```
 
-### 查询仓库
+### Query Repository
 
 ```bash
 POST /query
 {
-  "question": "这个项目是做什么的？"
+  "question": "What does this project do?"
 }
 ```
 
-## 技术栈
+## Project Structure
 
-- **向量存储**: FAISS
-- **嵌入模型**: text-embedding-v4
-- **LLM (强)**: qwen3.5-plus - 用于最终答案生成
-- **LLM (快)**: qwen-flash - 用于查询扩展、问题分类、chunk 摘要生成、LLM 评估
-- **API 框架**: FastAPI
-- **数据模型**: Pydantic
+```
+repomind/
+├── repomind/
+│   ├── ingestion/          # Data parsing and preprocessing
+│   │   ├── chunker.py      # Multi-level code chunker
+│   │   ├── summary_generator.py  # LLM summary generation
+│   │   └── models.py       # CodeChunk data model
+│   ├── indexing/           # Embedding and vector indexing
+│   │   └── embedding_service.py
+│   ├── storage/            # Vector storage abstraction
+│   │   ├── vector_store.py # Abstract base class
+│   │   └── faiss_store.py  # FAISS implementation
+│   ├── retrieval/          # Multi-stage retrieval pipeline
+│   │   ├── pipeline.py     # Main retrieval flow
+│   │   ├── query_expander.py  # Query expansion
+│   │   ├── query_classifier.py  # Query classification
+│   │   └── reranker.py     # Reranker (Chinese optimization)
+│   ├── generation/         # LLM answer generation
+│   │   ├── answer_generator.py
+│   │   └── llm_service.py
+│   ├── evaluation/         # Evaluation metrics
+│   │   ├── retrieval_metrics.py
+│   │   ├── llm_evaluator.py
+│   │   ├── llm_metrics.py
+│   │   └── result_parser.py
+│   ├── api/                # FastAPI service
+│   │   ├── main.py
+│   │   └── schemas.py
+│   ├── mcp/                # MCP service
+│   │   └── server.py
+│   ├── configs/            # Configuration management
+│   │   └── settings.py
+│   ├── baselines/          # Baseline systems
+│   │   ├── naive_rag.py
+│   │   ├── structured_rag.py
+│   │   ├── full_system.py
+│   │   └── full_system_fast.py
+│   └── core.py             # RepoMind core class
+├── test_suite/             # Test suite
+│   ├── travel_agent/
+│   │   ├── test_questions.json
+│   │   ├── test_questions.md
+│   │   └── expected_sources.json
+│   └── cuezero/
+│       ├── test_questions.json
+│       ├── test_questions.md
+│       └── expected_sources.json
+├── scripts/                # Utility scripts
+│   ├── run_baseline_comparison.py
+│   ├── analyze_baseline_results.py
+│   ├── run_full_llm_eval.py
+│   ├── start_mcp_server.py
+│   └── ...
+├── tests/                  # Test suite
+│   ├── test_api.py
+│   ├── test_storage.py
+│   └── ...
+├── requirements.txt
+└── README.md
+```
 
-## 开发进度
+## Tech Stack
 
-- [x] Phase 1: 核心基础设施
-- [x] Phase 2: 数据模型与摄入
-- [x] Phase 3: 嵌入与存储
-- [x] Phase 4: 检索 Pipeline
-- [x] Phase 5: 生成模块
-- [x] Phase 6: 评估与 API
-- [x] Phase 7: 文档与提交
-- [x] Phase 8: 基线对比测试
-- [x] Phase 9: Fast LLM 阶梯实现
-- [x] Phase 10: 多级 Chunk + LLM Summary
-- [x] Phase 11: 中文 Reranker 优化
-- [x] Phase 12: 项目完善与收尾 (FAISS 增强 / MCP 服务 / 文档更新)
+- **Vector Storage**: FAISS (Facebook AI Similarity Search)
+- **Embedding Model**: text-embedding-v4
+- **Strong LLM**: qwen3.5-plus - for final answer generation
+- **Fast LLM**: qwen-flash - for query expansion, question classification, chunk summary generation, LLM evaluation
+- **API Framework**: FastAPI
+- **Data Modeling**: Pydantic v2
 
-## 重要更新记录
+## Development Progress
 
-### 2026-03-26: 项目完善与收尾
+- [x] Phase 1: Core Infrastructure
+- [x] Phase 2: Data Models & Ingestion
+- [x] Phase 3: Embedding & Storage
+- [x] Phase 4: Retrieval Pipeline
+- [x] Phase 5: Generation Module
+- [x] Phase 6: Evaluation & API
+- [x] Phase 7: Documentation & Commit
+- [x] Phase 8: Baseline Comparison Tests
+- [x] Phase 9: Fast LLM Tiered Implementation
+- [x] Phase 10: Multi-level Chunk + LLM Summary
+- [x] Phase 11: Chinese Reranker Optimization
+- [x] Phase 12: Project Completion & Finalization (FAISS Enhancement / MCP Service / Documentation Updates)
 
-**关键改进**:
-- **FAISS 中间层增强**: 添加 delete、update、clear、get_chunks_by_file、count、exists 等方法
-- **MCP 服务支持**: 新增 MCP (Model Context Protocol) 服务器，便于接入 Claude Desktop 等 AI 工具
-- **FastAPI 单元测试**: 添加 API 端点测试
-- **README 更新**: 完善基线测试结果表格，增加平均正确性、平均事实性、平均总Token 指标
+## Changelog
 
-**新增文件**:
-- `repomind/mcp/server.py` - MCP 服务器
-- `scripts/start_mcp_server.py` - MCP 服务启动脚本
-- `tests/test_api.py` - FastAPI 单元测试
+### 2026-03-26: Project Completion & Finalization
 
-### 2026-03-26: 中文 Reranker 优化
+**Key Improvements**:
+- **FAISS Middleware Enhancement**: Added delete, update, clear, get_chunks_by_file, count, exists methods
+- **MCP Service Support**: Added MCP (Model Context Protocol) server for easy integration with Claude Desktop and other AI tools
+- **FastAPI Unit Tests**: Added API endpoint tests
+- **README Update**: Enhanced baseline results table with Avg Correctness, Avg Grounding, Avg Total Token metrics
 
-**关键改进**:
-- 添加中文 2-gram + 3-gram 匹配
-- 添加中文无意义代词排除表
-- 调整权重：alpha=0.85 (余弦相似度), beta=0.15 (关键词分数)
-- README_zh.md 现在能正确被检索出来了
+**New Files**:
+- `repomind/mcp/server.py` - MCP server
+- `scripts/start_mcp_server.py` - MCP service startup script
+- `tests/test_api.py` - FastAPI unit tests
 
-**测试结果**:
-- travel_agent: 召回率 0.975, 命中率 1.000, 端到端成功率 100.0%
-- cuezero: 召回率 0.450, 命中率 1.000, 可回答率 100.0%
+### 2026-03-26: Chinese Reranker Optimization
 
-### 2026-03-24: 多级 Chunk + LLM Summary
+**Key Improvements**:
+- Added Chinese 2-gram + 3-gram matching
+- Added Chinese meaningless pronoun exclusion table
+- Adjusted weights: alpha=0.85 (cosine similarity), beta=0.15 (keyword score)
+- README_zh.md can now be correctly retrieved
 
-**关键改进**:
-- 多级 chunk 架构（file / class / function / block）
-- 结构化信息提取（imports、signatures、calls 等）
-- LLM 摘要生成框架（使用 qwen-flash 模型）
-- 建库时自动生成 LLM summaries
+**Test Results**:
+- travel_agent: Recall 0.975, Hit Rate 1.000, E2E Success Rate 100.0%
+- cuezero: Recall 0.450, Hit Rate 1.000, Answerable Rate 100.0%
 
-### 2026-03-23: Chunker Bug 修复
+### 2026-03-24: Multi-level Chunk + LLM Summary
 
-**修复的 Bug**:
-- 重复的 Chunk - 类方法被提取两次的问题
-- `_is_top_level` 永远返回 True - 已添加 parent 属性设置
-- 缺少模块级上下文 - 现在支持多级 chunk
-- 纯脚本文件无法切分 - 增加了脚本块切分支持
+**Key Improvements**:
+- Multi-level chunk architecture (file / class / function / block)
+- Structured information extraction (imports, signatures, calls, etc.)
+- LLM summary generation framework (using qwen-flash model)
+- Automatic LLM summaries generation during indexing
 
-## 许可证
+### 2026-03-23: Chunker Bug Fixes
+
+**Fixed Bugs**:
+- Duplicate Chunks - Issue where class methods were extracted twice
+- `_is_top_level` always returning True - Added parent attribute setting to correctly distinguish class methods from top-level functions
+- Missing module-level context - Now supports multi-level chunks
+- Pure script files couldn't be chunked - Added script block chunking support
+
+## License
 
 MIT License
