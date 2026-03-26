@@ -49,8 +49,6 @@
   •
   <a href="#-use-cases">Use Cases</a>
   •
-  <a href="#-core-features">Features</a>
-  •
   <a href="#-technical-highlights">Highlights</a>
   •
   <a href="#-system-architecture">Architecture</a>
@@ -70,10 +68,12 @@
 
 - **Specialized Code Chunking**: AST-aware file/class/function/block chunking with structured data extraction
 - **LLM Summary Generation**: Auto-generated chunk summaries during indexing for better retrieval quality
+- **Multi-stage Retrieval Pipeline**: Query expansion + vector search + metadata filtering + reranking
 - **Chinese Optimization**: n-gram matching with meaningless pronoun exclusion
 - **Token Efficiency**: ~80% token reduction vs non-optimized RAG on large repos (14100 → 1634 tokens)
 - **Dual Model Strategy**: Fast model for simple questions, strong model for complex questions, ensuring accuracy while optimizing cost and latency
-- **MCP Support**: Model Context Protocol for easy AI tool integration
+- **Extensible Architecture**: Vector storage abstraction layer for future migration
+- **FastAPI & MCP Support**: Production-ready API and Model Context Protocol for easy integration
 
 ## 📊 Performance / Key Insight
 
@@ -97,17 +97,6 @@ See [full baseline results](#-baseline-results) below for detailed metrics.
 - **AI Agent Context Provider**: Integrate with Claude Desktop or other AI tools via MCP to provide codebase context with minimal token overhead
 - **Large Repo Exploration**: Efficiently navigate and understand internal tools or niche open-source projects without sending entire files to LLMs
 - **Team Knowledge Base**: Help new team members onboard faster by answering codebase questions with grounded, verifiable answers
-
-## ✨ Core Features
-
-- **Multi-level Code-aware Chunking**: Python AST-based file/class/function/block chunking with structured data extraction
-- **LLM Summary Generation**: Automatic LLM summary generation for each chunk during indexing, improving retrieval quality
-- **Multi-stage Retrieval Pipeline**: Query expansion + vector search + metadata filtering + reranking
-- **Chinese Keyword Optimization**: Chinese 2-gram + 3-gram matching with meaningless pronoun exclusion
-- **Hybrid Answer Generation**: Fast model for simple questions, strong model for complex questions
-- **Extensible Architecture**: Vector storage abstraction layer for future migration to Qdrant
-- **FastAPI Service**: Production-ready API interface
-- **MCP Service**: Model Context Protocol support for easy integration with AI tools
 
 ## 🔧 Technical Highlights
 
