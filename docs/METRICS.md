@@ -86,13 +86,11 @@ This test suite evaluates RepoMind on two representative codebases. Test questio
 
 ## Retrieval Metrics
 
-## Retrieval Metrics
-
 | Metric | Definition | Formula |
 |--------|------------|---------|
-| **Recall** | Fraction of relevant chunks retrieved | `|Retrieved ∩ Relevant| / |Relevant|` |
-| **Hit Rate** | Fraction of questions with at least one relevant chunk | `1.0 if |Retrieved ∩ Relevant| > 0 else 0.0` |
-| **Precision** | Fraction of retrieved chunks that are relevant | `|Retrieved ∩ Relevant| / |Retrieved|` |
+| **Recall** | Fraction of relevant chunks retrieved | \|Retrieved ∩ Relevant\| / \|Relevant\| |
+| **Hit Rate** | Fraction of questions with at least one relevant chunk | 1.0 if \|Retrieved ∩ Relevant\| > 0 else 0.0 |
+| **Precision** | Fraction of retrieved chunks that are relevant | \|Retrieved ∩ Relevant\| / \|Retrieved\| |
 
 All retrieval metrics are calculated at the file level using source file paths. See `repomind/evaluation/retrieval_metrics.py` for implementation details.
 
@@ -112,12 +110,12 @@ See `repomind/evaluation/llm_evaluator.py` for the prompt templates and evaluati
 
 | Metric | Definition | Formula |
 |--------|------------|---------|
-| **Answerable Rate** | Fraction of questions with sufficiency == 2 | `count(sufficiency == 2) / N` |
-| **End-to-end Success Rate** | Fraction of questions with correctness == 2 AND grounding == 2 | `count(correctness == 2 AND grounding == 2) / N` |
-| **Retrieval Gap** | Average gap between sufficiency and correctness | `avg(sufficiency - correctness)` |
-| **Avg Sufficiency** | Average sufficiency score across all questions | `sum(sufficiency) / N` |
-| **Avg Correctness** | Average correctness score across all questions | `sum(correctness) / N` |
-| **Avg Grounding** | Average grounding score across all questions | `sum(grounding) / N` |
+| **Answerable Rate** | Fraction of questions with sufficiency == 2 | count(sufficiency == 2) / N |
+| **End-to-end Success Rate** | Fraction of questions with correctness == 2 AND grounding == 2 | count(correctness == 2 AND grounding == 2) / N |
+| **Retrieval Gap** | Average gap between sufficiency and correctness | avg(sufficiency - correctness) |
+| **Avg Sufficiency** | Average sufficiency score across all questions | sum(sufficiency) / N |
+| **Avg Correctness** | Average correctness score across all questions | sum(correctness) / N |
+| **Avg Grounding** | Average grounding score across all questions | sum(grounding) / N |
 
 See `repomind/evaluation/llm_metrics.py` for implementation details.
 
