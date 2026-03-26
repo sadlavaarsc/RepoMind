@@ -9,31 +9,31 @@
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 > 📖 **中文文档**: [README_zh.md](README_zh.md)
+> 📝 **Changelog**: [CHANGELOG.md](CHANGELOG.md)
 
 A code-aware RAG (Retrieval-Augmented Generation) system for repository understanding. RepoMind helps AI and developers efficiently explore unfamiliar codebases with token-efficient approaches.
 
-## Table of Contents
+---
 
-- [Project Overview](#project-overview)
-- [Problem & Use Cases](#problem--use-cases)
-- [Core Features](#core-features)
-- [Technical Highlights](#technical-highlights)
-- [System Architecture](#system-architecture)
-- [Quick Start](#quick-start)
-- [Core Modules](#core-modules)
-- [Evaluation Metrics](#evaluation-metrics)
-- [Baseline Results](#baseline-results)
-- [API Usage](#api-usage)
-- [Project Structure](#project-structure)
-- [Tech Stack](#tech-stack)
-- [Development Progress](#development-progress)
-- [Changelog](#changelog)
+<p align="center">
+  <a href="#-project-overview">Overview</a> •
+  <a href="#-problem--use-cases">Use Cases</a> •
+  <a href="#-core-features">Features</a> •
+  <a href="#-technical-highlights">Highlights</a> •
+  <a href="#-system-architecture">Architecture</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-core-modules">Modules</a> •
+  <a href="#-evaluation-metrics">Metrics</a> •
+  <a href="#-baseline-results">Results</a>
+</p>
 
-## Project Overview
+---
+
+## 📋 Project Overview
 
 RepoMind is a modular code repository understanding system that uses RAG technology to answer questions about codebases. It's specifically designed to help with **relatively static and niche codebases**, enabling both AI assistants and developers to understand unfamiliar code efficiently with significant token savings.
 
-## Problem & Use Cases
+## 🎯 Problem & Use Cases
 
 ### The Problem
 - **Static/Niche Codebases**: Documentation is often outdated or missing for internal tools and less popular open-source projects
@@ -46,7 +46,7 @@ RepoMind is a modular code repository understanding system that uses RAG technol
 - **Open Source Project Assistant**: Help developers quickly understand and use open-source projects
 - **AI-Powered Programming Assistant**: Integrate with IDEs or AI tools to provide code context understanding
 
-## Core Features
+## ✨ Core Features
 
 - **Multi-level Code-aware Chunking**: Python AST-based file/class/function/block chunking with structured data extraction
 - **LLM Summary Generation**: Automatic LLM summary generation for each chunk during indexing, improving retrieval quality
@@ -57,7 +57,7 @@ RepoMind is a modular code repository understanding system that uses RAG technol
 - **FastAPI Service**: Production-ready API interface
 - **MCP Service**: Model Context Protocol support for easy integration with AI tools
 
-## Technical Highlights
+## 🔧 Technical Highlights
 
 ### 1. Chunker Design: Multi-level Chunking
 **Challenge**: Balancing granularity and context for optimal retrieval
@@ -89,7 +89,7 @@ RepoMind is a modular code repository understanding system that uses RAG technol
 - **Structured Data**: Extract imports, signatures, calls instead of using full code
 - **Smart Context Packing**: Prioritize summary > structured data > code
 
-## System Architecture
+## 🏗️ System Architecture
 
 ```mermaid
 graph TD
@@ -137,7 +137,7 @@ graph TD
     F2 --> G
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Environment Requirements
 
@@ -229,7 +229,7 @@ Add to Claude Desktop config:
 }
 ```
 
-## Core Modules
+## 📦 Core Modules
 
 ### 1. Ingestion
 
@@ -306,7 +306,7 @@ Add to Claude Desktop config:
   - End-to-end Success Rate
   - Retrieval Gap
 
-## Evaluation Metrics
+## 📊 Evaluation Metrics
 
 ### Retrieval Metrics
 
@@ -352,7 +352,7 @@ See `repomind/evaluation/llm_metrics.py` for implementation details.
 | **Avg Prompt Token** | Average prompt tokens per query |
 | **Avg Completion Token** | Average completion tokens per query |
 
-## Baseline Results
+## 📈 Baseline Results
 
 ### Test Projects
 
@@ -406,7 +406,9 @@ See `repomind/evaluation/llm_metrics.py` for implementation details.
    - At least 1 code chunk
    - Ensures diversity in retrieval results
 
-## API Usage
+---
+
+## 📡 API Usage
 
 ### Index Repository
 
@@ -426,70 +428,36 @@ POST /query
 }
 ```
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```
 repomind/
 ├── repomind/
 │   ├── ingestion/          # Data parsing and preprocessing
-│   │   ├── chunker.py      # Multi-level code chunker
-│   │   ├── summary_generator.py  # LLM summary generation
-│   │   └── models.py       # CodeChunk data model
 │   ├── indexing/           # Embedding and vector indexing
-│   │   └── embedding_service.py
 │   ├── storage/            # Vector storage abstraction
-│   │   ├── vector_store.py # Abstract base class
-│   │   └── faiss_store.py  # FAISS implementation
 │   ├── retrieval/          # Multi-stage retrieval pipeline
-│   │   ├── pipeline.py     # Main retrieval flow
-│   │   ├── query_expander.py  # Query expansion
-│   │   ├── query_classifier.py  # Query classification
-│   │   └── reranker.py     # Reranker (Chinese optimization)
 │   ├── generation/         # LLM answer generation
-│   │   ├── answer_generator.py
-│   │   └── llm_service.py
 │   ├── evaluation/         # Evaluation metrics
-│   │   ├── retrieval_metrics.py
-│   │   ├── llm_evaluator.py
-│   │   ├── llm_metrics.py
-│   │   └── result_parser.py
 │   ├── api/                # FastAPI service
-│   │   ├── main.py
-│   │   └── schemas.py
 │   ├── mcp/                # MCP service
-│   │   └── server.py
 │   ├── configs/            # Configuration management
-│   │   └── settings.py
 │   ├── baselines/          # Baseline systems
-│   │   ├── naive_rag.py
-│   │   ├── structured_rag.py
-│   │   ├── full_system.py
-│   │   └── full_system_fast.py
 │   └── core.py             # RepoMind core class
 ├── test_suite/             # Test suite
-│   ├── travel_agent/
-│   │   ├── test_questions.json
-│   │   ├── test_questions.md
-│   │   └── expected_sources.json
-│   └── cuezero/
-│       ├── test_questions.json
-│       ├── test_questions.md
-│       └── expected_sources.json
 ├── scripts/                # Utility scripts
-│   ├── run_baseline_comparison.py
-│   ├── analyze_baseline_results.py
-│   ├── run_full_llm_eval.py
-│   ├── start_mcp_server.py
-│   └── ...
 ├── tests/                  # Test suite
-│   ├── test_api.py
-│   ├── test_storage.py
-│   └── ...
 ├── requirements.txt
-└── README.md
+├── README.md
+├── README_zh.md
+└── CHANGELOG.md
 ```
 
-## Tech Stack
+---
+
+## 🛠️ Tech Stack
 
 - **Vector Storage**: FAISS (Facebook AI Similarity Search)
 - **Embedding Model**: text-embedding-v4
@@ -498,64 +466,14 @@ repomind/
 - **API Framework**: FastAPI
 - **Data Modeling**: Pydantic v2
 
-## Development Progress
+---
 
-- [x] Phase 1: Core Infrastructure
-- [x] Phase 2: Data Models & Ingestion
-- [x] Phase 3: Embedding & Storage
-- [x] Phase 4: Retrieval Pipeline
-- [x] Phase 5: Generation Module
-- [x] Phase 6: Evaluation & API
-- [x] Phase 7: Documentation & Commit
-- [x] Phase 8: Baseline Comparison Tests
-- [x] Phase 9: Fast LLM Tiered Implementation
-- [x] Phase 10: Multi-level Chunk + LLM Summary
-- [x] Phase 11: Chinese Reranker Optimization
-- [x] Phase 12: Project Completion & Finalization (FAISS Enhancement / MCP Service / Documentation Updates)
+## 📝 Changelog
 
-## Changelog
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
 
-### 2026-03-26: Project Completion & Finalization
+---
 
-**Key Improvements**:
-- **FAISS Middleware Enhancement**: Added delete, update, clear, get_chunks_by_file, count, exists methods
-- **MCP Service Support**: Added MCP (Model Context Protocol) server for easy integration with Claude Desktop and other AI tools
-- **FastAPI Unit Tests**: Added API endpoint tests
-- **README Update**: Enhanced baseline results table with Avg Correctness, Avg Grounding, Avg Total Token metrics
-
-**New Files**:
-- `repomind/mcp/server.py` - MCP server
-- `scripts/start_mcp_server.py` - MCP service startup script
-- `tests/test_api.py` - FastAPI unit tests
-
-### 2026-03-26: Chinese Reranker Optimization
-
-**Key Improvements**:
-- Added Chinese 2-gram + 3-gram matching
-- Added Chinese meaningless pronoun exclusion table
-- Adjusted weights: alpha=0.85 (cosine similarity), beta=0.15 (keyword score)
-- README_zh.md can now be correctly retrieved
-
-**Test Results**:
-- travel_agent: Recall 0.975, Hit Rate 1.000, E2E Success Rate 100.0%
-- cuezero: Recall 0.450, Hit Rate 1.000, Answerable Rate 100.0%
-
-### 2026-03-24: Multi-level Chunk + LLM Summary
-
-**Key Improvements**:
-- Multi-level chunk architecture (file / class / function / block)
-- Structured information extraction (imports, signatures, calls, etc.)
-- LLM summary generation framework (using qwen-flash model)
-- Automatic LLM summaries generation during indexing
-
-### 2026-03-23: Chunker Bug Fixes
-
-**Fixed Bugs**:
-- Duplicate Chunks - Issue where class methods were extracted twice
-- `_is_top_level` always returning True - Added parent attribute setting to correctly distinguish class methods from top-level functions
-- Missing module-level context - Now supports multi-level chunks
-- Pure script files couldn't be chunked - Added script block chunking support
-
-## License
+## 📄 License
 
 MIT License

@@ -9,31 +9,31 @@
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 > 📖 **English Documentation**: [README.md](README.md)
+> 📝 **更新记录**: [CHANGELOG.md](CHANGELOG.md)
 
 代码感知的 RAG（检索增强生成）系统，用于仓库理解。RepoMind 帮助 AI 和开发者以高效（节省 Token）的方式探索不熟悉的代码库。
 
-## 目录
+---
 
-- [项目概述](#项目概述)
-- [问题与场景](#问题与场景)
-- [核心特性](#核心特性)
-- [技术亮点](#技术亮点)
-- [系统架构](#系统架构)
-- [快速开始](#快速开始)
-- [核心模块](#核心模块)
-- [评估指标](#评估指标)
-- [基线测试结果](#基线测试结果)
-- [API 使用](#api-使用)
-- [项目结构](#项目结构)
-- [技术栈](#技术栈)
-- [开发进度](#开发进度)
-- [更新记录](#更新记录)
+<p align="center">
+  <a href="#-项目概述">概述</a> •
+  <a href="#-问题与场景">场景</a> •
+  <a href="#-核心特性">特性</a> •
+  <a href="#-技术亮点">亮点</a> •
+  <a href="#-系统架构">架构</a> •
+  <a href="#-快速开始">快速开始</a> •
+  <a href="#-核心模块">模块</a> •
+  <a href="#-评估指标">指标</a> •
+  <a href="#-基线测试结果">结果</a>
+</p>
 
-## 项目概述
+---
+
+## 📋 项目概述
 
 RepoMind 是一个模块化的代码仓库理解系统，使用 RAG 技术来回答关于代码库的问题。它专门设计用于帮助处理**相对静态且冷门的代码库**，使 AI 助手和开发者都能以显著节省 Token 的方式高效地理解不熟悉的代码。
 
-## 问题与场景
+## 🎯 问题与场景
 
 ### 解决的问题
 - **静态/冷门代码库**：内部工具和不太流行的开源项目通常文档过时或缺失
@@ -46,7 +46,7 @@ RepoMind 是一个模块化的代码仓库理解系统，使用 RAG 技术来回
 - **开源项目辅助工具**：帮助开发者快速理解和使用开源项目
 - **AI 辅助编程助手**：与 IDE 或 AI 工具集成，提供代码上下文理解
 
-## 核心特性
+## ✨ 核心特性
 
 - **多级代码感知分块**：基于 Python AST 的 file/class/function/block 多级分块，带结构化数据提取
 - **LLM 摘要生成**：建库时自动为每个 chunk 生成 LLM 摘要，提升检索质量
@@ -57,7 +57,7 @@ RepoMind 是一个模块化的代码仓库理解系统，使用 RAG 技术来回
 - **FastAPI 服务**：生产就绪的 API 接口
 - **MCP 服务**：支持 Model Context Protocol，便于接入其他 AI 工具
 
-## 技术亮点
+## 🔧 技术亮点
 
 ### 1. Chunker 设计：多级分块
 **挑战**：在粒度和上下文之间取得平衡以实现最佳检索
@@ -89,7 +89,7 @@ RepoMind 是一个模块化的代码仓库理解系统，使用 RAG 技术来回
 - **结构化数据**：提取 imports、signatures、calls 而不是使用完整代码
 - **智能上下文打包**：优先顺序：摘要 > 结构化数据 > 代码
 
-## 系统架构
+## 🏗️ 系统架构
 
 ```mermaid
 graph TD
@@ -137,7 +137,7 @@ graph TD
     F2 --> G
 ```
 
-## 快速开始
+## 🚀 快速开始
 
 ### 环境要求
 
@@ -229,7 +229,7 @@ conda activate agentEnv && python scripts/start_mcp_server.py
 }
 ```
 
-## 核心模块
+## 📦 核心模块
 
 ### 1. Ingestion（数据摄入）
 
@@ -306,7 +306,7 @@ conda activate agentEnv && python scripts/start_mcp_server.py
   - 端到端成功率
   - 检索差距
 
-## 评估指标
+## 📊 评估指标
 
 ### 检索指标
 
@@ -352,7 +352,7 @@ conda activate agentEnv && python scripts/start_mcp_server.py
 | **平均 Prompt Token** | 平均每个查询的 Prompt Token |
 | **平均 Completion Token** | 平均每个查询的 Completion Token |
 
-## 基线测试结果
+## 📈 基线测试结果
 
 ### 测试项目
 
@@ -406,7 +406,9 @@ conda activate agentEnv && python scripts/start_mcp_server.py
    - 至少 1 个代码 chunk
    - 确保检索结果的多样性
 
-## API 使用
+---
+
+## 📡 API 使用
 
 ### 索引仓库
 
@@ -426,70 +428,36 @@ POST /query
 }
 ```
 
-## 项目结构
+---
+
+## 📁 项目结构
 
 ```
 repomind/
 ├── repomind/
 │   ├── ingestion/          # 数据解析与预处理
-│   │   ├── chunker.py      # 多级代码分块器
-│   │   ├── summary_generator.py  # LLM 摘要生成
-│   │   └── models.py       # CodeChunk 数据模型
 │   ├── indexing/           # 嵌入与向量索引
-│   │   └── embedding_service.py
 │   ├── storage/            # 向量存储抽象
-│   │   ├── vector_store.py # 抽象基类
-│   │   └── faiss_store.py  # FAISS 实现
 │   ├── retrieval/          # 多阶段检索 pipeline
-│   │   ├── pipeline.py     # 检索主流程
-│   │   ├── query_expander.py  # 查询扩展
-│   │   ├── query_classifier.py  # 查询分类
-│   │   └── reranker.py     # 重排序器（中文优化）
 │   ├── generation/         # LLM 答案生成
-│   │   ├── answer_generator.py
-│   │   └── llm_service.py
 │   ├── evaluation/         # 评估指标
-│   │   ├── retrieval_metrics.py
-│   │   ├── llm_evaluator.py
-│   │   ├── llm_metrics.py
-│   │   └── result_parser.py
 │   ├── api/                # FastAPI 服务
-│   │   ├── main.py
-│   │   └── schemas.py
 │   ├── mcp/                # MCP 服务
-│   │   └── server.py
 │   ├── configs/            # 配置管理
-│   │   └── settings.py
 │   ├── baselines/          # 基线系统
-│   │   ├── naive_rag.py
-│   │   ├── structured_rag.py
-│   │   ├── full_system.py
-│   │   └── full_system_fast.py
 │   └── core.py             # RepoMind 核心类
 ├── test_suite/             # 测试集
-│   ├── travel_agent/
-│   │   ├── test_questions.json
-│   │   ├── test_questions.md
-│   │   └── expected_sources.json
-│   └── cuezero/
-│       ├── test_questions.json
-│       ├── test_questions.md
-│       └── expected_sources.json
 ├── scripts/                # 工具脚本
-│   ├── run_baseline_comparison.py
-│   ├── analyze_baseline_results.py
-│   ├── run_full_llm_eval.py
-│   ├── start_mcp_server.py
-│   └── ...
 ├── tests/                  # 测试套件
-│   ├── test_api.py
-│   ├── test_storage.py
-│   └── ...
 ├── requirements.txt
-└── README.md
+├── README.md
+├── README_zh.md
+└── CHANGELOG.md
 ```
 
-## 技术栈
+---
+
+## 🛠️ 技术栈
 
 - **向量存储**：FAISS（Facebook AI Similarity Search）
 - **嵌入模型**：text-embedding-v4
@@ -498,64 +466,14 @@ repomind/
 - **API 框架**：FastAPI
 - **数据模型**：Pydantic v2
 
-## 开发进度
+---
 
-- [x] Phase 1: 核心基础设施
-- [x] Phase 2: 数据模型与摄入
-- [x] Phase 3: 嵌入与存储
-- [x] Phase 4: 检索 Pipeline
-- [x] Phase 5: 生成模块
-- [x] Phase 6: 评估与 API
-- [x] Phase 7: 文档与提交
-- [x] Phase 8: 基线对比测试
-- [x] Phase 9: Fast LLM 阶梯实现
-- [x] Phase 10: 多级 Chunk + LLM Summary
-- [x] Phase 11: 中文 Reranker 优化
-- [x] Phase 12: 项目完善与收尾（FAISS 增强 / MCP 服务 / 文档更新）
+## 📝 更新记录
 
-## 更新记录
+详细的更新历史请查看 [CHANGELOG.md](CHANGELOG.md)。
 
-### 2026-03-26: 项目完善与收尾
+---
 
-**关键改进**：
-- **FAISS 中间层增强**：添加 delete、update、clear、get_chunks_by_file、count、exists 等方法
-- **MCP 服务支持**：新增 MCP (Model Context Protocol) 服务器，便于接入 Claude Desktop 等 AI 工具
-- **FastAPI 单元测试**：添加 API 端点测试
-- **README 更新**：完善基线测试结果表格，增加平均正确性、平均事实性、平均总Token 指标
-
-**新增文件**：
-- `repomind/mcp/server.py` - MCP 服务器
-- `scripts/start_mcp_server.py` - MCP 服务启动脚本
-- `tests/test_api.py` - FastAPI 单元测试
-
-### 2026-03-26: 中文 Reranker 优化
-
-**关键改进**：
-- 添加中文 2-gram + 3-gram 匹配
-- 添加中文无意义代词排除表
-- 调整权重：alpha=0.85（余弦相似度），beta=0.15（关键词分数）
-- README_zh.md 现在能正确被检索出来了
-
-**测试结果**：
-- travel_agent：召回率 0.975，命中率 1.000，端到端成功率 100.0%
-- cuezero：召回率 0.450，命中率 1.000，可回答率 100.0%
-
-### 2026-03-24: 多级 Chunk + LLM Summary
-
-**关键改进**：
-- 多级 chunk 架构（file / class / function / block）
-- 结构化信息提取（imports、signatures、calls 等）
-- LLM 摘要生成框架（使用 qwen-flash 模型）
-- 建库时自动生成 LLM summaries
-
-### 2026-03-23: Chunker Bug 修复
-
-**修复的 Bug**：
-- 重复的 Chunk - 类方法被提取两次的问题
-- `_is_top_level` 永远返回 True - 已添加 parent 属性设置，可正确区分类方法和顶层函数
-- 缺少模块级上下文 - 现在支持多级 chunk
-- 纯脚本文件无法切分 - 增加了脚本块切分支持
-
-## 许可证
+## 📄 许可证
 
 MIT License
