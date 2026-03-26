@@ -298,8 +298,8 @@ See [docs/MODULES.md](docs/MODULES.md).
 
 For evaluation metrics, see [docs/METRICS.md](docs/METRICS.md). Tested projects:
 
-1. **travel_agent** (small): LLM-based travel assistant agent
-2. **cuezero** (medium-large): High-performance billiards AI system
+1. **travel_agent** (small): LLM-based travel assistant agent (see `测试仓库/`)
+2. **cuezero** (medium-large): High-performance billiards AI system (https://github.com/sadlavaarsc/CueZero)
 
 ### Tested Systems
 
